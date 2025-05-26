@@ -7,7 +7,7 @@ optimizer = true
 optimizer_runs = 10000
 verbosity = 3
 wrap_comments = true
-gas_reports = ["send_and_receive", "ERC1155TL"]
+gas_reports = ["send_and_receive_editions", "ERC1155TL"]
 show_progess = true
 
 [fuzz]
