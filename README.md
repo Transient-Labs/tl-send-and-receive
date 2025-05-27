@@ -4,6 +4,8 @@ Smart contracts where you send ERC-1155 tokens and in return receive another tok
 ## System Explanation
 The system is meant to be quite simple. It takes in ERC-1155 tokens, confirms the token + quantity of that token is available to be redeemed for a single output token. If so, it sends the output token. If not, reverts.
 
+![architecture](./public/system-architecture.png)
+
 The owner of the contract can then retrieve the nfts sent to the contract. The nfts can be sent to any address, but it's expected that most creators would send to the 0xDEAD address to burn them.
 
 The output token must be compatible with the `externalMint` function from Transient's ERC1155TL contract.
