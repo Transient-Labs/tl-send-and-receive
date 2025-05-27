@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.22;
-import { IERC1155Receiver } from "@openzeppelin-contracts-5.0.2/token/ERC1155/IERC1155Receiver.sol";
+
+import {IERC1155Receiver} from "@openzeppelin-contracts-5.0.2/token/ERC1155/IERC1155Receiver.sol";
 
 interface ISendAndReceive is IERC1155Receiver {
-
     // Structs
     struct InitConfig {
         address contract_address;
@@ -34,7 +34,12 @@ interface ISendAndReceive is IERC1155Receiver {
     function renounce_ownership() external;
     function config_inputs(InputConfig[] memory configs) external;
     function config_settings(SettingsConfig memory config) external;
-    function withdraw_nfts(address contract_address, uint256[] memory token_ids, uint256[] memory amounts, address recipient) external;
+    function withdraw_nfts(
+        address contract_address,
+        uint256[] memory token_ids,
+        uint256[] memory amounts,
+        address recipient
+    ) external;
     function set_paused(bool pause) external;
     function get_input_config(address contract_address, uint256 token_id) external view returns (uint256);
 }
