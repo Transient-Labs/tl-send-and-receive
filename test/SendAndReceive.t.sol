@@ -137,10 +137,23 @@ contract SendAndReceiveTest is Test {
         nft.safeTransferFrom(bsy, address(snr), 3, 1, "");
         vm.stopPrank();
 
+        // invalid token with 0 amount
+        snr.config_settings(config);
+        vm.startPrank(bsy);
+        vm.expectRevert("send_and_receive_editions: invalid input token");
+        nft.safeTransferFrom(bsy, address(snr), 3, 0, "");
+        vm.stopPrank();
+
         // invalid amount
         vm.startPrank(bsy);
         vm.expectRevert("send_and_receive_editions: invalid amount of token sent");
         nft.safeTransferFrom(bsy, address(snr), 1, 2, "");
+        vm.stopPrank(); 
+
+        // invalid amount with 0 amount
+        vm.startPrank(bsy);
+        vm.expectRevert("send_and_receive_editions: invalid amount of token sent");
+        nft.safeTransferFrom(bsy, address(snr), 1, 0, "");
         vm.stopPrank(); 
     }
 
@@ -303,9 +316,28 @@ contract SendAndReceiveTest is Test {
         nft.safeBatchTransferFrom(bsy, address(snr), tokenIds, values, "");
         vm.stopPrank();
 
+        // invalid token with 0 amount
+        config.open_at = 0;
+        config.max_supply = type(uint256).max;
+        tokenIds[1] = 3;
+        values[1] = 0;
+        snr.config_settings(config);
+        vm.startPrank(bsy);
+        vm.expectRevert("send_and_receive_editions: invalid input token");
+        nft.safeBatchTransferFrom(bsy, address(snr), tokenIds, values, "");
+        vm.stopPrank();
+
         // invalid amount
         tokenIds[1] = 2;
         values[1] = 1;
+        vm.startPrank(bsy);
+        vm.expectRevert("send_and_receive_editions: invalid amount of token sent");
+        nft.safeBatchTransferFrom(bsy, address(snr), tokenIds, values, "");
+        vm.stopPrank();
+
+        // invalid amount with 0 amount
+        tokenIds[1] = 2;
+        values[1] = 0;
         vm.startPrank(bsy);
         vm.expectRevert("send_and_receive_editions: invalid amount of token sent");
         nft.safeBatchTransferFrom(bsy, address(snr), tokenIds, values, "");
