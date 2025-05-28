@@ -1,4 +1,5 @@
 [profile.default]
+version = "1.0.0"
 src = "src"
 out = "out"
 libs = ["dependencies", ".venv/lib/python3.13/site-packages"]
