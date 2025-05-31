@@ -2,9 +2,8 @@
 pragma solidity 0.8.22;
 
 import "forge-std-1.9.7/Script.sol";
- 
-contract DeployEditions is Script {
 
+contract DeployEditions is Script {
     function run() public {
         // get environment variables
         bytes memory constructorArgs = vm.envBytes("CONSTRUCTOR_ARGS");

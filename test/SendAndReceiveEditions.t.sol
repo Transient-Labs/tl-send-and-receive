@@ -149,10 +149,8 @@ contract SendAndReceiveEditionsTest is Test {
 
         assertEq(snr.num_redeemed(), 2);
 
-        ISendAndReceiveEditions.SettingsConfig memory settings = ISendAndReceiveEditions.SettingsConfig({
-            open_at: 0,
-            max_supply: 1
-        });
+        ISendAndReceiveEditions.SettingsConfig memory settings =
+            ISendAndReceiveEditions.SettingsConfig({open_at: 0, max_supply: 1});
 
         vm.expectRevert("send_and_receive_editions: cannot set max supply below number redeemed");
         snr.config_settings(settings);
@@ -227,8 +225,10 @@ contract SendAndReceiveEditionsTest is Test {
         }
 
         ISendAndReceiveEditions.InputConfig[] memory configs = new ISendAndReceiveEditions.InputConfig[](2);
-        configs[0] = ISendAndReceiveEditions.InputConfig({contract_address: address(nft), token_id: 1, amount: amountOne});
-        configs[1] = ISendAndReceiveEditions.InputConfig({contract_address: address(nft), token_id: 2, amount: amountTwo});
+        configs[0] =
+            ISendAndReceiveEditions.InputConfig({contract_address: address(nft), token_id: 1, amount: amountOne});
+        configs[1] =
+            ISendAndReceiveEditions.InputConfig({contract_address: address(nft), token_id: 2, amount: amountTwo});
 
         snr.config_inputs(configs);
 
@@ -419,8 +419,10 @@ contract SendAndReceiveEditionsTest is Test {
         }
 
         ISendAndReceiveEditions.InputConfig[] memory configs = new ISendAndReceiveEditions.InputConfig[](2);
-        configs[0] = ISendAndReceiveEditions.InputConfig({contract_address: address(nft), token_id: 1, amount: amountOne});
-        configs[1] = ISendAndReceiveEditions.InputConfig({contract_address: address(nft), token_id: 2, amount: amountTwo});
+        configs[0] =
+            ISendAndReceiveEditions.InputConfig({contract_address: address(nft), token_id: 1, amount: amountOne});
+        configs[1] =
+            ISendAndReceiveEditions.InputConfig({contract_address: address(nft), token_id: 2, amount: amountTwo});
 
         snr.config_inputs(configs);
 
