@@ -3,7 +3,7 @@ pragma solidity 0.8.22;
 
 import {IERC1155Receiver} from "@openzeppelin-contracts-5.0.2/token/ERC1155/IERC1155Receiver.sol";
 
-interface ISendAndReceive is IERC1155Receiver {
+interface ISendAndReceiveEditions is IERC1155Receiver {
     // Structs
     struct InitConfig {
         address contract_address;

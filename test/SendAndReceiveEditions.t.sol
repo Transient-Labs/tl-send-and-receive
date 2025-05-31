@@ -2,11 +2,11 @@
 pragma solidity 0.8.22;
 
 import "forge-std-1.9.7/Test.sol";
-import {ISendAndReceive} from "./ISendAndReceive.sol";
+import {ISendAndReceiveEditions} from "./ISendAndReceiveEditions.sol";
 import {ERC1155TL} from "tl-creator-contracts-3.3.1/erc-1155/ERC1155TL.sol";
 
-contract SendAndReceiveTest is Test {
-    ISendAndReceive public snr;
+contract SendAndReceiveEditionsTest is Test {
+    ISendAndReceiveEditions public snr;
     ERC1155TL public nft;
 
     address bsy = address(0x42069);
@@ -37,22 +37,22 @@ contract SendAndReceiveTest is Test {
         nft.createToken("uri4", addys, amts);
 
         // setup SNR
-        ISendAndReceive.InitConfig memory initConfig = ISendAndReceive.InitConfig({
+        ISendAndReceiveEditions.InitConfig memory initConfig = ISendAndReceiveEditions.InitConfig({
             contract_address: address(nft),
             token_id: 4,
             open_at: 0,
             max_supply: type(uint256).max
         });
-        snr = ISendAndReceive(deployCode("send_and_receive_editions", abi.encode(initConfig)));
+        snr = ISendAndReceiveEditions(deployCode("send_and_receive_editions", abi.encode(initConfig)));
         assertEq(snr.owner(), address(this));
         assertEq(snr.contract_address(), address(nft));
         assertEq(snr.token_id(), 4);
         assertEq(snr.open_at(), 0);
         assertEq(snr.max_supply(), type(uint256).max);
 
-        ISendAndReceive.InputConfig[] memory configs = new ISendAndReceive.InputConfig[](2);
-        configs[0] = ISendAndReceive.InputConfig({contract_address: address(nft), token_id: 1, amount: 1});
-        configs[1] = ISendAndReceive.InputConfig({contract_address: address(nft), token_id: 2, amount: 2});
+        ISendAndReceiveEditions.InputConfig[] memory configs = new ISendAndReceiveEditions.InputConfig[](2);
+        configs[0] = ISendAndReceiveEditions.InputConfig({contract_address: address(nft), token_id: 1, amount: 1});
+        configs[1] = ISendAndReceiveEditions.InputConfig({contract_address: address(nft), token_id: 2, amount: 2});
 
         snr.config_inputs(configs);
 
@@ -69,11 +69,11 @@ contract SendAndReceiveTest is Test {
     function test_access_control(address hacker) public {
         vm.assume(hacker != address(this));
 
-        ISendAndReceive.InputConfig[] memory configs = new ISendAndReceive.InputConfig[](1);
-        configs[0] = ISendAndReceive.InputConfig({contract_address: address(nft), token_id: 1, amount: 1});
+        ISendAndReceiveEditions.InputConfig[] memory configs = new ISendAndReceiveEditions.InputConfig[](1);
+        configs[0] = ISendAndReceiveEditions.InputConfig({contract_address: address(nft), token_id: 1, amount: 1});
 
-        ISendAndReceive.SettingsConfig memory settingsConfig =
-            ISendAndReceive.SettingsConfig({open_at: 0, max_supply: type(uint256).max});
+        ISendAndReceiveEditions.SettingsConfig memory settingsConfig =
+            ISendAndReceiveEditions.SettingsConfig({open_at: 0, max_supply: type(uint256).max});
 
         vm.prank(hacker);
         vm.expectRevert("ownable: caller is not the owner");
@@ -93,8 +93,8 @@ contract SendAndReceiveTest is Test {
     }
 
     function test_safeTransferFrom_failures() public {
-        ISendAndReceive.SettingsConfig memory config =
-            ISendAndReceive.SettingsConfig({open_at: block.timestamp + 10, max_supply: type(uint256).max});
+        ISendAndReceiveEditions.SettingsConfig memory config =
+            ISendAndReceiveEditions.SettingsConfig({open_at: block.timestamp + 10, max_supply: type(uint256).max});
         // redemption not open
         snr.config_settings(config);
         vm.startPrank(bsy);
@@ -138,6 +138,24 @@ contract SendAndReceiveTest is Test {
         vm.expectRevert("send_and_receive_editions: invalid amount of token sent");
         nft.safeTransferFrom(bsy, address(snr), 1, 0, "");
         vm.stopPrank();
+    }
+
+    function test_config_settings_error() public {
+        // BSY transfers 1 of token 1 and token 2
+        vm.startPrank(bsy);
+        nft.safeTransferFrom(bsy, address(snr), 1, 1, "");
+        nft.safeTransferFrom(bsy, address(snr), 2, 2, "");
+        vm.stopPrank();
+
+        assertEq(snr.num_redeemed(), 2);
+
+        ISendAndReceiveEditions.SettingsConfig memory settings = ISendAndReceiveEditions.SettingsConfig({
+            open_at: 0,
+            max_supply: 1
+        });
+
+        vm.expectRevert("send_and_receive_editions: cannot set max supply below number redeemed");
+        snr.config_settings(settings);
     }
 
     function test_safeTransferFrom() public {
@@ -208,9 +226,9 @@ contract SendAndReceiveTest is Test {
             amountTwo = amountTwo % amt + 1;
         }
 
-        ISendAndReceive.InputConfig[] memory configs = new ISendAndReceive.InputConfig[](2);
-        configs[0] = ISendAndReceive.InputConfig({contract_address: address(nft), token_id: 1, amount: amountOne});
-        configs[1] = ISendAndReceive.InputConfig({contract_address: address(nft), token_id: 2, amount: amountTwo});
+        ISendAndReceiveEditions.InputConfig[] memory configs = new ISendAndReceiveEditions.InputConfig[](2);
+        configs[0] = ISendAndReceiveEditions.InputConfig({contract_address: address(nft), token_id: 1, amount: amountOne});
+        configs[1] = ISendAndReceiveEditions.InputConfig({contract_address: address(nft), token_id: 2, amount: amountTwo});
 
         snr.config_inputs(configs);
 
@@ -250,8 +268,8 @@ contract SendAndReceiveTest is Test {
         values[0] = 1;
         values[1] = 2;
 
-        ISendAndReceive.SettingsConfig memory config =
-            ISendAndReceive.SettingsConfig({open_at: block.timestamp + 10, max_supply: type(uint256).max});
+        ISendAndReceiveEditions.SettingsConfig memory config =
+            ISendAndReceiveEditions.SettingsConfig({open_at: block.timestamp + 10, max_supply: type(uint256).max});
 
         // redemption not open
         snr.config_settings(config);
@@ -400,9 +418,9 @@ contract SendAndReceiveTest is Test {
             amountTwo = amountTwo % amt + 1;
         }
 
-        ISendAndReceive.InputConfig[] memory configs = new ISendAndReceive.InputConfig[](2);
-        configs[0] = ISendAndReceive.InputConfig({contract_address: address(nft), token_id: 1, amount: amountOne});
-        configs[1] = ISendAndReceive.InputConfig({contract_address: address(nft), token_id: 2, amount: amountTwo});
+        ISendAndReceiveEditions.InputConfig[] memory configs = new ISendAndReceiveEditions.InputConfig[](2);
+        configs[0] = ISendAndReceiveEditions.InputConfig({contract_address: address(nft), token_id: 1, amount: amountOne});
+        configs[1] = ISendAndReceiveEditions.InputConfig({contract_address: address(nft), token_id: 2, amount: amountTwo});
 
         snr.config_inputs(configs);
 

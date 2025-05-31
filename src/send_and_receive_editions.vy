@@ -160,6 +160,8 @@ def config_settings(config: SettingsConfig):
     """
     ownable._check_owner()
 
+    assert config.max_supply >= self.num_redeemed, "send_and_receive_editions: cannot set max supply below number redeemed"
+    
     self.open_at = config.open_at
     self.max_supply = config.max_supply
 
