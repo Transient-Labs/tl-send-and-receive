@@ -30,6 +30,7 @@ interface ISendAndReceiveEditions is IERC1155Receiver {
     function open_at() external view returns (uint256);
     function max_supply() external view returns (uint256);
     function num_redeemed() external view returns (uint256);
+    function input_amount(address contract_address, uint256 token_id) external view returns (uint256);
     function transfer_ownership(address newOwner) external;
     function renounce_ownership() external;
     function config_inputs(InputConfig[] memory configs) external;
@@ -41,5 +42,4 @@ interface ISendAndReceiveEditions is IERC1155Receiver {
         address recipient
     ) external;
     function set_paused(bool pause) external;
-    function get_input_config(address contract_address, uint256 token_id) external view returns (uint256);
 }

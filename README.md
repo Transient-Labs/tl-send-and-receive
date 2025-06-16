@@ -28,6 +28,11 @@ The output token must be compatible with the `externalMint` function from Transi
 - Run `forge coverage` for coverage tests
 - Run `forge test --gas-report` for a gas report
 
+## Deploying
+1. Run `source .env`
+2. Run `forge script script/Deploy.s.sol:DeployEditions --rpc-url mainnet --sender $SENDER --ledger --broadcast`
+3. Manually verify contract on etherscan through vyper json
+
 ## Disclaimer
 This codebase is provided on an "as is" and "as available" basis.
 

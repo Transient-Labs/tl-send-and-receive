@@ -56,9 +56,9 @@ contract SendAndReceiveEditionsTest is Test {
 
         snr.config_inputs(configs);
 
-        assertEq(snr.get_input_config(address(nft), 1), 1);
-        assertEq(snr.get_input_config(address(nft), 2), 2);
-        assertEq(snr.get_input_config(address(nft), 3), 0);
+        assertEq(snr.input_amount(address(nft), 1), 1);
+        assertEq(snr.input_amount(address(nft), 2), 2);
+        assertEq(snr.input_amount(address(nft), 3), 0);
 
         // set mint contract
         address[] memory mintContracts = new address[](1);

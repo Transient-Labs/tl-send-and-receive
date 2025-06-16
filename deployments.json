@@ -1,5 +1,8 @@
 {
-    "editions": {
-        "sepolia_test_1": "0xd0a5b1d496541bacca971bb81de4b93a70113c8f"
+    "send_and_receive_editions": {
+        "1.0.0": {
+            "sepolia_test_1": "0xd0a5b1d496541bacca971bb81de4b93a70113c8f",
+            "nameless_dread_eth": ""
+        }
     }
 }

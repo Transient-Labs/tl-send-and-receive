@@ -52,7 +52,7 @@ event InputConfigured:
 # Constants
 SUPPORTED_INTERFACES: constant(bytes4[2]) = [
     0x01FFC9A7, # the ERC-165 identifier for ERC-165.
-    0x4E2312E0, # the ERC-165 identifier for ERC-155 Receiver.
+    0x4E2312E0, # the ERC-165 identifier for ERC-1155 Receiver.
 ]
 
 # Storage
@@ -61,7 +61,7 @@ token_id: public(uint256)
 open_at: public(uint256)
 max_supply: public(uint256)
 num_redeemed: public(uint256)
-input_amounts: HashMap[address, HashMap[uint256, uint256]] # input contract address + input token id -> input amount needed
+input_amount: public(HashMap[address, HashMap[uint256, uint256]]) # input contract address + input token id -> input amount needed
 
 @deploy
 def __init__(init_config: InitConfig):
@@ -83,7 +83,7 @@ def onERC1155Received(operator: address, from_: address, id: uint256, value_: ui
     """
     pausable._require_not_paused()
 
-    self.process_input_token(msg.sender, id, value_, from_)
+    self._process_input_token(msg.sender, id, value_, from_)
 
     return method_id("onERC1155Received(address,address,uint256,uint256,bytes)", output_type=bytes4)
 
@@ -105,13 +105,13 @@ def onERC1155BatchReceived(
 
     assert len(ids) == len(values), "mismatch in ids array and values array"
     for i: uint256 in range(len(ids), bound=200):
-        self.process_input_token(msg.sender, ids[i], values[i], from_)
+        self._process_input_token(msg.sender, ids[i], values[i], from_)
 
     return method_id("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)", output_type=bytes4)
     
 
 @internal
-def process_input_token(input_contract_address: address, input_token_id: uint256, input_amount: uint256, recipient: address):
+def _process_input_token(input_contract_address: address, input_token_id: uint256, input_amount: uint256, recipient: address):
     """
     @notice Helper function to process an input token
     """
@@ -119,7 +119,7 @@ def process_input_token(input_contract_address: address, input_token_id: uint256
     assert block.timestamp >= self.open_at, "send_and_receive_editions: redemption not open"
 
     # Get input amount needed to redeem
-    required_input_amount: uint256 = self.input_amounts[input_contract_address][input_token_id]
+    required_input_amount: uint256 = self.input_amount[input_contract_address][input_token_id]
     assert required_input_amount > 0, "send_and_receive_editions: invalid input token"
     assert input_amount == required_input_amount, "send_and_receive_editions: invalid amount of token sent"
 
@@ -145,7 +145,7 @@ def config_inputs(configs: DynArray[InputConfig, 100]):
     ownable._check_owner()
 
     for config: InputConfig in configs:
-        self.input_amounts[config.contract_address][config.token_id] = config.amount
+        self.input_amount[config.contract_address][config.token_id] = config.amount
         log InputConfigured(
             contract_address=config.contract_address, 
             token_id=config.token_id,
@@ -189,12 +189,6 @@ def set_paused(pause: bool):
         pausable._pause()
     else:
         pausable._unpause()
-
-
-@view
-@external
-def get_input_config(contract_address: address, token_id: uint256) -> uint256:
-    return self.input_amounts[contract_address][token_id]
     
 
 @view
