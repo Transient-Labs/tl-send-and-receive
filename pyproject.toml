@@ -5,6 +5,5 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "snekmate==0.1.1",
-    "vyper==0.4.1",
+    "slither-analyzer>=0.11.3",
 ]

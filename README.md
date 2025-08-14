@@ -1,18 +1,17 @@
 # Send and Receive
-Smart contracts where you send ERC-1155 tokens and in return receive another token.
+Smart contracts where you send ERC-1155 tokens and in return receive something else.
 
 ## System Explanation
-The system is meant to be quite simple. It takes in ERC-1155 tokens, confirms the token + quantity of that token is available to be redeemed for a single output token. If so, it sends the output token. If not, reverts.
+The system is meant to be quite simple. It takes in ERC-1155 tokens, confirms the token + quantity of that token is available to be redeemed for something else.
 
-![architecture](./public/system-architecture.png)
+![Redeem a ERC1155TL Mint](./public/SendAndReceiveERC1155TL.png)
+![Raffle for ERC1155TL Mint](./public/SendAndReceiveERC1155TLRaffle.png)
+![Redeem an ERC721 token](./public/SendAndReceiveERC721.png)
+![Redeem ETH or ERC-20](./public/SendAndReceiveCurrency.png)
 
-The owner of the contract can then retrieve the nfts sent to the contract. The nfts can be sent to any address, but it's expected that most creators would send to the 0xDEAD address to burn them.
 
-The output token must be compatible with the `externalMint` function from Transient's ERC1155TL contract.
-
-### Schematics
-![redepmtion](./public/redemption.png)
-![retreival](./public/retrieval.png)
+### Attack Vectors
+![Attack Vectors](./public/AttackVectors.png)
 
 
 ## Getting Started
@@ -30,7 +29,7 @@ The output token must be compatible with the `externalMint` function from Transi
 
 ## Deploying
 1. Run `source .env`
-2. Run `forge script script/Deploy.s.sol:DeployEditions --rpc-url mainnet --sender $SENDER --ledger --broadcast`
+2. Run `forge script script/Deploy.s.sol:Deploy --rpc-url mainnet --sender $SENDER --ledger --broadcast`
 3. Manually verify contract on etherscan through vyper json
 
 ## Disclaimer

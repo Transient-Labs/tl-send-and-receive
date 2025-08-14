@@ -2,7 +2,13 @@
     "send_and_receive_editions": {
         "1.0.0": {
             "sepolia_test_1": "0xd0a5b1d496541bacca971bb81de4b93a70113c8f",
-            "nameless_dread_eth": ""
+            "nameless_dread_eth": "0xEA839bA576422C7f54c8325C42dCF2E25316f9BE",
+            "everything_vs_nothing_eth": "0x43Dc7a00710b0d7e369B544DC6E605ed609f1515",
+            "m0dest_16_eth": "0x31fFca705E7594816Bb0bdf60923a36Ddf3Cc713",
+            "m0dest_17_eth": "0x5AAeEd8E2fAB2c1681038Cac29938aa4c5193097",
+            "m0dest_18_eth": "0x99d7605A83fa85e861f931C0710B8d40a21019de",
+            "m0dest_19_eth": "0x9Dc918cc16eB20eeb7C1Be985bd3802b8f9b270f",
+            "m0dest_20_eth": "0xEEcA7C5B9581635Ae4354Fa118780b6703e35d85"
         }
     }
 }
