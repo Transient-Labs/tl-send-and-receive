@@ -2,8 +2,10 @@ name: CI
 
 on:
   push:
-  pull_request:
-  workflow_dispatch:
+    branches-ignore:
+      - 'main' # All branches but main
+    tags-ignore:
+      - '**'  # This ignores all tags
 
 env:
   FOUNDRY_PROFILE: ci
