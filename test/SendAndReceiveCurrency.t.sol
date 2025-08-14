@@ -12,6 +12,7 @@ import {MockERC20} from "./mocks/MockERC20.sol";
 
 contract ForceSend {
     constructor() payable {}
+
     function go(address payable to) external {
         selfdestruct(to);
     }

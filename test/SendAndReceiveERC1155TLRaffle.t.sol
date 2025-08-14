@@ -88,12 +88,7 @@ contract SendAndReceiveERC1155TLRaffleTest is Test {
         assertEq(numWinners, initSettings.numWinners);
         assertEq(numEntries, 0);
 
-        (
-            bytes32 retSeedHash,
-            bytes32 retSeed,
-            uint256 retA,
-            uint256 retB
-        )  = snr.randomnessConfig();
+        (bytes32 retSeedHash, bytes32 retSeed, uint256 retA, uint256 retB) = snr.randomnessConfig();
         assertEq(retSeedHash, seedHash);
         assertEq(retSeed, bytes32(0));
         assertEq(retA, 0);
@@ -385,12 +380,7 @@ contract SendAndReceiveERC1155TLRaffleTest is Test {
         vm.expectEmit(true, true, true, false, address(snr));
         emit SendAndReceiveERC1155TLRaffle.Revealed(seed, A, B);
         snr.reveal(seed, salt);
-        (
-            bytes32 retSeedHash,
-            bytes32 retSeed,
-            uint256 retA,
-            uint256 retB
-        )  = snr.randomnessConfig();
+        (bytes32 retSeedHash, bytes32 retSeed, uint256 retA, uint256 retB) = snr.randomnessConfig();
         assertEq(retSeedHash, seedHash);
         assertEq(retSeed, seed);
         assertEq(retA, A);
@@ -490,11 +480,11 @@ contract SendAndReceiveERC1155TLRaffleTest is Test {
         snr.reveal(seed, salt);
 
         // try to claim
-       if (numEntries > 0 ) {
+        if (numEntries > 0) {
             vm.prank(addresses[0]);
             vm.expectRevert(SendAndReceiveERC1155TLRaffle.SeedNotRevealed.selector);
             snr.claim(addresses[0]);
-       }
+        }
 
         // warp to end
         vm.warp(block.timestamp + 49 hours);
@@ -510,12 +500,7 @@ contract SendAndReceiveERC1155TLRaffleTest is Test {
         vm.expectEmit(true, true, true, false, address(snr));
         emit SendAndReceiveERC1155TLRaffle.Revealed(seed, A, B);
         snr.reveal(seed, salt);
-        (
-            bytes32 retSeedHash,
-            bytes32 retSeed,
-            uint256 retA,
-            uint256 retB
-        )  = snr.randomnessConfig();
+        (bytes32 retSeedHash, bytes32 retSeed, uint256 retA, uint256 retB) = snr.randomnessConfig();
         assertEq(retSeedHash, seedHash);
         assertEq(retSeed, seed);
         assertEq(retA, A);

@@ -123,7 +123,8 @@ contract SendAndReceiveERC1155TLRaffle is SendAndReceiveBase {
         s.inputTokenId = initSettings.inputTokenId;
         s.inputAmount = initSettings.inputAmount;
         s.inputTokenSink = initSettings.inputTokenSink;
-        s.openAt = uint256(initSettings.openAt) < uint64(block.timestamp) ? uint64(block.timestamp) : initSettings.openAt;
+        s.openAt =
+            uint256(initSettings.openAt) < uint64(block.timestamp) ? uint64(block.timestamp) : initSettings.openAt;
         s.duration = initSettings.duration;
         s.numWinners = initSettings.numWinners;
 

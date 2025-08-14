@@ -96,7 +96,8 @@ contract SendAndReceiveERC721 is SendAndReceiveBase {
         s.outputContractAddress = initSettings.outputContractAddress;
         s.outputTokenId = initSettings.outputTokenId;
         s.inputTokenSink = initSettings.inputTokenSink;
-        s.openAt = uint256(initSettings.openAt) < uint64(block.timestamp) ? uint64(block.timestamp) : initSettings.openAt;
+        s.openAt =
+            uint256(initSettings.openAt) < uint64(block.timestamp) ? uint64(block.timestamp) : initSettings.openAt;
         s.duration = initSettings.duration;
         s.tokenOwner = initSettings.tokenOwner;
 
