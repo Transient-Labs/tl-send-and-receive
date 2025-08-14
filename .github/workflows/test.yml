@@ -27,28 +27,16 @@ jobs:
         run: |
           forge --version
 
-      - name: Install uv
-        run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-
-      - name: Setup python env
-        run: |
-          uv sync
-
-      - name: Show vyper version
-        run: |
-          uv run ./vyper.sh --version
-
       - name: Install from soldeer
         run: |
-          forge soldeer install
+          make install
 
       - name: Run Forge build
         run: |
-          forge build --sizes
+          make build
         id: build
 
       - name: Run Forge tests
         run: |
-          forge test -vvv
+          make test_std
         id: test
