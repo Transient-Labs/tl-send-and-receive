@@ -68,6 +68,7 @@ contract SendAndReceiveERC1155TLRaffle is SendAndReceiveBase {
     // Errors
     ////////////////////////////////////////////////////////////////////////////
 
+    error AddressZeroCodeLength();
     error ZeroInputAmount();
     error ZeroAddressSink();
     error ZeroWinners();
@@ -84,6 +85,8 @@ contract SendAndReceiveERC1155TLRaffle is SendAndReceiveBase {
     error Canceled();
     error InvalidSeed();
     error CannotCancel();
+    error CannotChangeOpenTimeOnceStarted();
+    error CannotChangeDurationOnceStarted();
 
     ////////////////////////////////////////////////////////////////////////////
     // Constructor
@@ -103,11 +106,17 @@ contract SendAndReceiveERC1155TLRaffle is SendAndReceiveBase {
         __Ownable_init(initOwner);
         __ReentrancyGuard_init();
 
+        // verify that the input contract address has code
+        if (initSettings.inputContractAddress.code.length == 0) revert AddressZeroCodeLength();
+
         // make sure input amount is not 0
         if (initSettings.inputAmount == 0) revert ZeroInputAmount();
 
         // make sure token sink isn't the zero address
         if (initSettings.inputTokenSink == address(0)) revert ZeroAddressSink();
+
+        // verify that the output contract address has code
+        if (initSettings.outputContractAddress.code.length == 0) revert AddressZeroCodeLength();
 
         // make sure numWinners != 0
         if (initSettings.numWinners == uint64(0)) revert ZeroWinners();
@@ -146,9 +155,16 @@ contract SendAndReceiveERC1155TLRaffle is SendAndReceiveBase {
     ) internal override {
         // cache settings
         Settings storage s = settings;
+        RandomnessConfig storage rc = randomnessConfig;
         uint256 openAt = uint256(s.openAt);
         uint256 duration = uint256(s.duration);
         uint64 currentIndex = s.numEntries;
+
+        // make sure not revealed
+        if (rc.seed != bytes32(0)) revert SeedAlreadyRevealed();
+
+        // make sure not canceled
+        if (s.canceled) revert Canceled();
 
         // make sure redemption is open
         if (block.timestamp < openAt || block.timestamp > openAt + duration) {
@@ -231,8 +247,9 @@ contract SendAndReceiveERC1155TLRaffle is SendAndReceiveBase {
     }
 
     /// @notice Function to cancel the raffle if the owner doesn't reveal in the time alloted
+    /// @dev Anyone can call this as a way to protect against just locking assets
     /// @dev Can only be called after the time alloted to reveal the seed is up
-    function cancelRaffle() external {
+    function cancel() external {
         // cache settings
         Settings storage s = settings;
         RandomnessConfig storage rc = randomnessConfig;
@@ -325,15 +342,21 @@ contract SendAndReceiveERC1155TLRaffle is SendAndReceiveBase {
 
     /// @notice Function to update settings
     /// @dev Requires owner to call this function
+    /// @dev This function limits what can be changed once open for entries
     function updateSettings(uint64 openAt, uint64 duration, address inputTokenSink) external onlyOwner {
+        Settings storage s = settings;
+
         // checks
+        if (block.timestamp >= s.openAt && openAt != s.openAt) revert CannotChangeOpenTimeOnceStarted();
+        if (block.timestamp >= s.openAt && duration != s.duration) revert CannotChangeDurationOnceStarted();
         if (inputTokenSink == address(0)) revert ZeroAddressSink();
 
         // adjust settings
-        Settings storage s = settings;
         s.openAt = openAt;
         s.duration = duration;
         s.inputTokenSink = inputTokenSink;
+
+        emit SettingsUpdated();
     }
 
     ////////////////////////////////////////////////////////////////////////////

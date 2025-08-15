@@ -22,6 +22,7 @@ contract SendAndReceiveERC721Test is Test {
     address ace = address(0xACE);
 
     uint256 amt = type(uint64).max;
+    uint256 openTime = 42069;
 
     function setUp() public {
         // setup ERC1155TL
@@ -50,7 +51,7 @@ contract SendAndReceiveERC721Test is Test {
             inputTokenSink: sink,
             claimed: true, // just to test :)
             tokenOwner: cdb,
-            openAt: uint64(0),
+            openAt: uint64(openTime),
             duration: uint64(48 hours)
         });
         SendAndReceiveERC721.InputConfig[] memory inputConfigs = new SendAndReceiveERC721.InputConfig[](2);
@@ -75,14 +76,12 @@ contract SendAndReceiveERC721Test is Test {
         assertEq(inputTokenSink, initSettings.inputTokenSink);
         assertFalse(claimed);
         assertEq(tokenOwner, cdb);
-        assertEq(openAt, block.timestamp);
+        assertEq(openAt, openTime);
         assertEq(duration, initSettings.duration);
 
         assertEq(snr.getInputAmount(address(nft), 1), 1, "token 1 mismatch");
         assertEq(snr.getInputAmount(address(nft), 2), 2, "token 2 mismatch");
         assertEq(snr.getInputAmount(address(nft), 3), 0, "token 3 mismatch");
-
-        assertEq(snr.getInputConfigs().length, 2);
 
         // set token approval
         vm.prank(cdb);
@@ -140,6 +139,23 @@ contract SendAndReceiveERC721Test is Test {
         snr2.initialize(address(this), s, inputConfigs);
     }
 
+    function test_initialize_outputNotContract() public {
+        SendAndReceiveERC721.Settings memory s = SendAndReceiveERC721.Settings({
+            closed: false,
+            outputContractAddress: address(0),
+            outputTokenId: 1,
+            inputTokenSink: sink,
+            claimed: false,
+            tokenOwner: bsy,
+            openAt: uint64(0),
+            duration: uint64(1 days)
+        });
+        SendAndReceiveERC721.InputConfig[] memory inputConfigs = new SendAndReceiveERC721.InputConfig[](0);
+        SendAndReceiveERC721 snr2 = new SendAndReceiveERC721(false);
+        vm.expectRevert(SendAndReceiveERC721.AddressZeroCodeLength.selector);
+        snr2.initialize(address(this), s, inputConfigs);
+    }
+
     function test_accessControl(address hacker) public {
         vm.assume(hacker != address(this));
 
@@ -159,7 +175,8 @@ contract SendAndReceiveERC721Test is Test {
         snr.close();
     }
 
-    function test_configureInputs_tooManyConfigs() public {
+    function test_configureInputs_errors() public {
+        // too many configs
         uint256 n = 33; // > MAX_INPUT_CONFIGS_PER_TX (32)
         SendAndReceiveERC721.InputConfig[] memory arr = new SendAndReceiveERC721.InputConfig[](n);
         for (uint256 i = 0; i < n; ++i) {
@@ -167,16 +184,45 @@ contract SendAndReceiveERC721Test is Test {
         }
         vm.expectRevert(SendAndReceiveERC721.TooManyInputConfigs.selector);
         snr.configureInputs(arr);
+
+        arr = new SendAndReceiveERC721.InputConfig[](1);
+        arr[0] = SendAndReceiveERC721.InputConfig({contractAddress: bsy, tokenId: 10, amount: 1});
+        vm.expectRevert(SendAndReceiveERC721.AddressZeroCodeLength.selector);
+        snr.configureInputs(arr);
+
+        vm.warp(openTime);
+        vm.expectRevert(SendAndReceiveERC721.CannotChangeInputsOnceOpen.selector);
+        snr.configureInputs(arr);
+    }
+
+    function test_updateSettings_changeOpenTimeOnceStarted() public {
+        vm.warp(openTime);
+        vm.expectRevert(SendAndReceiveERC721.CannotChangeOpenTimeOnceStarted.selector);
+        snr.updateSettings(uint64(openTime) - 1, uint64(2 days), sink, cdb);
+        vm.expectRevert(SendAndReceiveERC721.CannotChangeOpenTimeOnceStarted.selector);
+        snr.updateSettings(uint64(openTime) + 1, uint64(2 days), sink, cdb);
+    }
+
+    function test_updateSettings_shortenDurationOnceStarted() public {
+        vm.warp(openTime);
+        vm.expectRevert(SendAndReceiveERC721.CannotChangeDurationOnceStarted.selector);
+        snr.updateSettings(uint64(openTime), uint64(1 hours), sink, cdb);
     }
 
     function test_updateSettings_zeroSink() public {
         vm.expectRevert(SendAndReceiveERC721.ZeroAddressSink.selector);
-        snr.updateSettings(uint64(0), uint64(1 days), address(0), cdb);
+        snr.updateSettings(uint64(openTime), uint64(1 days), address(0), cdb);
+        vm.warp(openTime);
+        vm.expectRevert(SendAndReceiveERC721.ZeroAddressSink.selector);
+        snr.updateSettings(uint64(openTime), uint64(2 days), address(0), cdb);
     }
 
     function test_updateSettings_zeroTokenOwner() public {
         vm.expectRevert(SendAndReceiveERC721.ZeroAddressOwner.selector);
-        snr.updateSettings(uint64(0), uint64(1 days), sink, address(0));
+        snr.updateSettings(uint64(openTime), uint64(1 days), sink, address(0));
+        vm.warp(openTime);
+        vm.expectRevert(SendAndReceiveERC721.ZeroAddressOwner.selector);
+        snr.updateSettings(uint64(openTime), uint64(2 days), sink, address(0));
     }
 
     function test_updateSettings_updatesFields() public {
@@ -204,20 +250,14 @@ contract SendAndReceiveERC721Test is Test {
 
     function test_singleTransfer_errors() public {
         // not open
-        snr.updateSettings(uint64(block.timestamp + 1 days), uint64(48 hours), sink, cdb);
         vm.prank(bsy);
         vm.expectRevert(SendAndReceiveERC721.NotOpen.selector);
         nft.safeTransferFrom(bsy, address(snr), 1, 1, "");
 
-        // window passed
-        snr.updateSettings(uint64(1), uint64(2), sink, cdb);
-        vm.warp(10);
-        vm.prank(bsy);
-        vm.expectRevert(SendAndReceiveERC721.NotOpen.selector);
-        nft.safeTransferFrom(bsy, address(snr), 1, 1, "");
+        // warp to open time
+        vm.warp(openTime);
 
         // invalid input token
-        snr.updateSettings(uint64(block.timestamp), uint64(2 days), sink, cdb);
         vm.prank(bsy);
         vm.expectRevert(SendAndReceiveERC721.InvalidInputToken.selector);
         nft.safeTransferFrom(bsy, address(snr), 3, 1, "");
@@ -227,10 +267,10 @@ contract SendAndReceiveERC721Test is Test {
         vm.expectRevert(SendAndReceiveERC721.InvalidAmountSent.selector);
         nft.safeTransferFrom(bsy, address(snr), 2, 1, "");
 
-        // closed
-        snr.close();
+        // window passed
+        vm.warp(openTime + 2 days + 1);
         vm.prank(bsy);
-        vm.expectRevert(SendAndReceiveERC721.Closed.selector);
+        vm.expectRevert(SendAndReceiveERC721.NotOpen.selector);
         nft.safeTransferFrom(bsy, address(snr), 1, 1, "");
     }
 
@@ -239,6 +279,8 @@ contract SendAndReceiveERC721Test is Test {
         vm.assume(sender != address(0));
         vm.assume(sender != bsy);
         vm.assume(sender != sink);
+
+        vm.warp(openTime);
 
         // mint tokens 1 & 2 to the sender
         address[] memory addresses = new address[](1);
@@ -290,20 +332,14 @@ contract SendAndReceiveERC721Test is Test {
         values[1] = 2;
 
         // not open
-        snr.updateSettings(uint64(block.timestamp + 1 days), uint64(48 hours), sink, cdb);
         vm.prank(bsy);
         vm.expectRevert(SendAndReceiveERC721.NotOpen.selector);
         nft.safeBatchTransferFrom(bsy, address(snr), ids, values, "");
 
-        // window passed
-        snr.updateSettings(uint64(1), uint64(2), sink, cdb);
-        vm.warp(10);
-        vm.prank(bsy);
-        vm.expectRevert(SendAndReceiveERC721.NotOpen.selector);
-        nft.safeBatchTransferFrom(bsy, address(snr), ids, values, "");
+        // warp to open time
+        vm.warp(openTime);
 
         // invalid input token
-        snr.updateSettings(uint64(block.timestamp), uint64(2 days), sink, cdb);
         ids[0] = 3;
         vm.prank(bsy);
         vm.expectRevert(SendAndReceiveERC721.InvalidInputToken.selector);
@@ -316,11 +352,11 @@ contract SendAndReceiveERC721Test is Test {
         vm.expectRevert(SendAndReceiveERC721.InvalidAmountSent.selector);
         nft.safeBatchTransferFrom(bsy, address(snr), ids, values, "");
 
-        // closed
+        // window passed
         values[0] = 1;
-        snr.close();
+        vm.warp(openTime + 2 days + 1);
         vm.prank(bsy);
-        vm.expectRevert(SendAndReceiveERC721.Closed.selector);
+        vm.expectRevert(SendAndReceiveERC721.NotOpen.selector);
         nft.safeBatchTransferFrom(bsy, address(snr), ids, values, "");
     }
 
@@ -329,6 +365,8 @@ contract SendAndReceiveERC721Test is Test {
         vm.assume(sender != address(0));
         vm.assume(sender != bsy);
         vm.assume(sender != sink);
+
+        vm.warp(openTime);
 
         uint256[] memory ids = new uint256[](2);
         ids[0] = 1;
@@ -346,9 +384,28 @@ contract SendAndReceiveERC721Test is Test {
         amts[0] = 2;
         nft.mintToken(2, addresses, amts);
 
-        // should always fail on batch transfe
+        // should always fail on batch transfer
         vm.prank(sender);
         vm.expectRevert(SendAndReceiveERC721.AlreadyClaimed.selector);
         nft.safeBatchTransferFrom(sender, address(snr), ids, values, "");
+    }
+
+    function test_closed_errors() public {
+        snr.close();
+
+        vm.prank(bsy);
+        vm.expectRevert(SendAndReceiveERC721.Closed.selector);
+        nft.safeTransferFrom(bsy, address(snr), 1, 1, "");
+
+        uint256[] memory ids = new uint256[](2);
+        ids[0] = 1;
+        ids[1] = 2;
+        uint256[] memory values = new uint256[](2);
+        values[0] = 1;
+        values[1] = 2;
+
+        vm.prank(bsy);
+        vm.expectRevert(SendAndReceiveERC721.Closed.selector);
+        nft.safeBatchTransferFrom(bsy, address(snr), ids, values, "");
     }
 }

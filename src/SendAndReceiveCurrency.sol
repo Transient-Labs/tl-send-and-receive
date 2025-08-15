@@ -11,6 +11,7 @@ import {SendAndReceiveBase, IERC1155Receiver} from "./lib/SendAndReceiveBase.sol
 /// @custom:version 2.0.0
 /// @dev The contract is written to only be configured for a single input token that immediately gets sent to the 0xDEAD address.
 ///      It is also written so that once configured, currency is always retrievable by sending tokens and nothing else.
+///      There is a minimum duration that it will be open for, configured by the creator, allowing them to close it manually only after that time has passed.
 ///      This is all by design for security reasons.
 contract SendAndReceiveCurrency is SendAndReceiveBase {
     ////////////////////////////////////////////////////////////////////////////
@@ -19,6 +20,7 @@ contract SendAndReceiveCurrency is SendAndReceiveBase {
 
     struct Settings {
         bool open;
+        bool closed;
         address inputContractAddress;
         uint256 inputTokenId;
         uint64 inputAmount;
@@ -26,6 +28,8 @@ contract SendAndReceiveCurrency is SendAndReceiveBase {
         uint256 valuePerRedemption;
         uint64 maxRedemptions;
         uint64 numRedeemed;
+        uint64 openAt;
+        uint64 duration;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -45,16 +49,22 @@ contract SendAndReceiveCurrency is SendAndReceiveBase {
     // Errors
     ////////////////////////////////////////////////////////////////////////////
 
+    error AddressZeroCodeLength();
     error ZeroInputAmount();
     error ZeroRedemptions();
+    error ZeroDuration();
     error AlreadyConfigured();
+    error ZeroValuePerRedemption();
     error EthDepositsClosed();
     error EthDepositNotAllowed();
     error NotOpen();
+    error Closed();
     error InvalidInputToken();
     error InvalidAmountSent();
     error NoSupplyLeft();
+    error CannotClose();
     error RedemptionOpen();
+    
 
     ////////////////////////////////////////////////////////////////////////////
     // Constructor
@@ -74,11 +84,20 @@ contract SendAndReceiveCurrency is SendAndReceiveBase {
         __Ownable_init(initOwner);
         __ReentrancyGuard_init();
 
+        // make sure input contract has code
+        if (initSettings.inputContractAddress.code.length == 0) revert AddressZeroCodeLength();
+
         // make sure input amount is not zero
-        if (initSettings.inputAmount == 0) revert ZeroInputAmount();
+        if (initSettings.inputAmount == uint64(0)) revert ZeroInputAmount();
+
+        // make sure currency address has code if not the zero address
+        if (initSettings.currencyAddress != address(0) && initSettings.currencyAddress.code.length == 0) revert AddressZeroCodeLength();
 
         // make sure there is at least 1 redemption
-        if (initSettings.maxRedemptions == 0) revert ZeroRedemptions();
+        if (initSettings.maxRedemptions == uint64(0)) revert ZeroRedemptions();
+
+        // make sure that the minimum duration > 0
+        if (initSettings.duration == uint64(0)) revert ZeroDuration();
 
         // save settings
         Settings storage s = settings;
@@ -87,6 +106,7 @@ contract SendAndReceiveCurrency is SendAndReceiveBase {
         s.inputAmount = initSettings.inputAmount;
         s.currencyAddress = initSettings.currencyAddress;
         s.maxRedemptions = initSettings.maxRedemptions;
+        s.duration = initSettings.duration;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -106,6 +126,7 @@ contract SendAndReceiveCurrency is SendAndReceiveBase {
 
         // make sure redemption is open
         if (!s.open) revert NotOpen();
+        if (s.closed) revert Closed();
 
         // make sure it's a valid token sent
         if (inputContractAddress != s.inputContractAddress || inputTokenId != s.inputTokenId) {
@@ -177,9 +198,12 @@ contract SendAndReceiveCurrency is SendAndReceiveBase {
     /// @dev Requires owner to call the function
     /// @dev Calculates the amountPerNFT when the function is called based on the contract settings.
     /// @dev WARNING: cannot be adjusted after calling.
-    function openRedemption() external onlyOwner {
+    function open() external onlyOwner {
         // cache settings
         Settings storage s = settings;
+
+        // if closed, revert
+        if (s.closed) revert Closed();
 
         // if open, revert
         if (s.open) revert AlreadyConfigured();
@@ -188,9 +212,34 @@ contract SendAndReceiveCurrency is SendAndReceiveBase {
         uint256 balance =
             s.currencyAddress == address(0) ? address(this).balance : IERC20(s.currencyAddress).balanceOf(address(this));
 
+        // calculate the value per redemption
+        uint256 valuePerRedemption = balance / uint256(s.maxRedemptions);
+
+        // ensure value per redemption > 0
+        if (valuePerRedemption == 0) revert ZeroValuePerRedemption();
+
         // adjust settings
         s.open = true;
-        s.valuePerRedemption = balance / uint256(s.maxRedemptions);
+        s.openAt = uint64(block.timestamp);
+        s.valuePerRedemption = valuePerRedemption;
+    }
+
+    /// @notice Function to close the redemption
+    /// @dev Requires owner to call the function
+    /// @dev This can happen only *after* the minimumDuration has passed, but the owner can set this to a very large value if desired
+    /// @dev This is built to be transparent to users but allows for some economic risk mitigation
+    function close() external onlyOwner {
+        // cache settings
+        Settings storage s = settings;
+
+        // make sure can close
+        if (!s.open) revert NotOpen();
+        if (block.timestamp < uint256(s.openAt) + uint256(s.duration)) revert CannotClose();
+
+        // save settings
+        s.closed = true;
+
+        emit RedemptionClosed();
     }
 
     /// @notice Function to withdraw currency
@@ -207,7 +256,7 @@ contract SendAndReceiveCurrency is SendAndReceiveBase {
         Settings storage s = settings;
 
         // revert if it's the configured currency address, redemption open, and not ended
-        if (currencyAddress == s.currencyAddress && s.open && s.numRedeemed < s.maxRedemptions) revert RedemptionOpen();
+        if (currencyAddress == s.currencyAddress && s.open && !s.closed && s.numRedeemed < s.maxRedemptions) revert RedemptionOpen();
 
         // send currency to recipient
         _sendCurrency(currencyAddress, recipient, value);

@@ -168,6 +168,8 @@ contract SendAndReceiveBaseTest is Test {
         vm.deal(address(this), amt);
         payable(address(snr)).call{value: amt}("");
         assertEq(address(snr).balance, amt, "SNR didn't receive eth");
+        vm.expectRevert(SendAndReceiveBase.CannotSendToZeroAddress.selector);
+        snr.withdrawCurrency(address(0), address(0), amt);
         snr.withdrawCurrency(address(0), bsy, amt);
         assertEq(address(snr).balance, 0, "SNR eth balance didn't clear");
         assertEq(bsy.balance, amt, "bsy didn't get the eth");
@@ -175,6 +177,8 @@ contract SendAndReceiveBaseTest is Test {
         // test coin
         coin.transfer(address(snr), amt);
         assertEq(coin.balanceOf(address(snr)), amt, "SNR didn't receive coin");
+        vm.expectRevert(SendAndReceiveBase.CannotSendToZeroAddress.selector);
+        snr.withdrawCurrency(address(coin), address(0), amt);
         snr.withdrawCurrency(address(coin), bsy, amt);
         assertEq(coin.balanceOf(address(snr)), 0, "SNR coin balance didn't clear");
         assertEq(coin.balanceOf(bsy), amt, "bsy didn't get the coin");

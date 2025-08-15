@@ -42,7 +42,6 @@ contract SendAndReceiveERC721 is SendAndReceiveBase {
 
     uint256 public constant MAX_INPUT_CONFIGS_PER_TX = 32;
     Settings public settings;
-    InputConfig[] private _inputConfigs;
     mapping(address => mapping(uint256 => uint256)) private _inputAmount; // contract address => token id => number needed to redeem a mint
 
     ////////////////////////////////////////////////////////////////////////////
@@ -55,6 +54,7 @@ contract SendAndReceiveERC721 is SendAndReceiveBase {
     // Errors
     ////////////////////////////////////////////////////////////////////////////
 
+    error AddressZeroCodeLength();
     error ZeroAddressSink();
     error ZeroAddressOwner();
     error Closed();
@@ -63,6 +63,9 @@ contract SendAndReceiveERC721 is SendAndReceiveBase {
     error InvalidAmountSent();
     error AlreadyClaimed();
     error TooManyInputConfigs();
+    error CannotChangeInputsOnceOpen();
+    error CannotChangeOpenTimeOnceStarted();
+    error CannotChangeDurationOnceStarted();
 
     ////////////////////////////////////////////////////////////////////////////
     // Constructor
@@ -90,6 +93,9 @@ contract SendAndReceiveERC721 is SendAndReceiveBase {
 
         // verify that the token owner is not the zero address
         if (initSettings.tokenOwner == address(0)) revert ZeroAddressOwner();
+
+        // verify that the output contract address has code
+        if (initSettings.outputContractAddress.code.length == 0) revert AddressZeroCodeLength();
 
         // save settings
         Settings storage s = settings;
@@ -172,7 +178,10 @@ contract SendAndReceiveERC721 is SendAndReceiveBase {
     /// @notice Function to configure input tokens
     /// @dev Requires owner to call this function
     /// @dev Setting an amount back to 0 disables redemption using that input token
+    /// @dev Being able to reset an input token during the redemption is a bit of a moving goal post, but can be needed for mistakes
     function configureInputs(InputConfig[] calldata inputConfigs) external onlyOwner {
+        Settings storage s = settings;
+        if (block.timestamp >= s.openAt) revert CannotChangeInputsOnceOpen();
         _configureInputs(inputConfigs);
     }
 
@@ -181,7 +190,11 @@ contract SendAndReceiveERC721 is SendAndReceiveBase {
         if (inputConfigs.length > MAX_INPUT_CONFIGS_PER_TX) revert TooManyInputConfigs();
         for (uint256 i = 0; i < inputConfigs.length; ++i) {
             InputConfig memory ic = inputConfigs[i];
-            _inputConfigs.push(ic);
+
+            // ensure input contract has code
+            if (ic.contractAddress.code.length == 0) revert AddressZeroCodeLength();
+
+            // save input amount
             _inputAmount[ic.contractAddress][ic.tokenId] = ic.amount;
 
             emit InputConfigured(ic.contractAddress, ic.tokenId, ic.amount);
@@ -190,37 +203,41 @@ contract SendAndReceiveERC721 is SendAndReceiveBase {
 
     /// @notice Function to update settings
     /// @dev Requires owner to call this function
+    /// @dev This function limits what can be changed once open for redemptions
     function updateSettings(uint64 openAt, uint64 duration, address inputTokenSink, address tokenOwner)
         external
         onlyOwner
     {
+        Settings storage s = settings;
+
         // checks
+        if (block.timestamp >= s.openAt && openAt != s.openAt) revert CannotChangeOpenTimeOnceStarted();
+        if (block.timestamp >= s.openAt && duration != s.duration) revert CannotChangeDurationOnceStarted();
         if (inputTokenSink == address(0)) revert ZeroAddressSink();
         if (tokenOwner == address(0)) revert ZeroAddressOwner();
 
         // adjust settings
-        Settings storage s = settings;
         s.openAt = openAt;
         s.duration = duration;
         s.inputTokenSink = inputTokenSink;
         s.tokenOwner = tokenOwner;
+
+        emit SettingsUpdated();
     }
 
     /// @notice Function to close the redemption
     /// @dev Requires owner to call this function
+    /// @dev This is meant to be more of an emergency function
     function close() external onlyOwner {
         Settings storage s = settings;
         s.closed = true;
+
+        emit RedemptionClosed();
     }
 
     ////////////////////////////////////////////////////////////////////////////
     // View Functions
     ////////////////////////////////////////////////////////////////////////////
-
-    /// @notice Function to get input configs
-    function getInputConfigs() external view returns (InputConfig[] memory) {
-        return _inputConfigs;
-    }
 
     /// @notice Function to get an input amount based on the contract address and token id
     function getInputAmount(address contractAddress, uint256 tokenId) external view returns (uint256) {

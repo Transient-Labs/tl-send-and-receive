@@ -31,6 +31,92 @@ contract SendAndReceiveCurrencyTest is Test {
 
     receive() external payable {}
 
+    function _setup_snrEth() internal {
+        SendAndReceiveCurrency.Settings memory initSettings = SendAndReceiveCurrency.Settings({
+            open: false,
+            closed: true, // test :)
+            inputContractAddress: address(nft),
+            inputTokenId: 1,
+            inputAmount: uint64(1),
+            currencyAddress: address(0),
+            valuePerRedemption: 100 ether, // test :)
+            maxRedemptions: uint64(100),
+            numRedeemed: uint64(10), // test :)
+            openAt: uint64(block.timestamp), // test :)
+            duration: uint64(365 days)
+        });
+        snrEth = new SendAndReceiveCurrency(false);
+        snrEth.initialize(address(this), initSettings);
+        assertEq(snrEth.owner(), address(this));
+        (
+            bool open,
+            bool closed,
+            address inputContractAddress,
+            uint256 inputTokenId,
+            uint64 inputAmount,
+            address currencyAddress,
+            uint256 valuePerRedemption,
+            uint64 maxRedemptions,
+            uint64 numRedeemed,
+            uint64 openAt,
+            uint64 duration
+        ) = snrEth.settings();
+        assertFalse(open);
+        assertFalse(closed);
+        assertEq(inputContractAddress, initSettings.inputContractAddress);
+        assertEq(inputTokenId, initSettings.inputTokenId);
+        assertEq(inputAmount, initSettings.inputAmount);
+        assertEq(currencyAddress, address(0));
+        assertEq(valuePerRedemption, 0);
+        assertEq(maxRedemptions, initSettings.maxRedemptions);
+        assertEq(numRedeemed, 0);
+        assertEq(openAt, 0);
+        assertEq(duration, initSettings.duration);
+    }
+
+    function _setup_snrCoin() internal {
+        SendAndReceiveCurrency.Settings memory initSettings = SendAndReceiveCurrency.Settings({
+            open: true, // test :)
+            closed: false,
+            inputContractAddress: address(nft),
+            inputTokenId: 2,
+            inputAmount: uint64(2),
+            currencyAddress: address(coin),
+            valuePerRedemption: 0,
+            maxRedemptions: uint64(1000),
+            numRedeemed: uint64(0),
+            openAt: uint64(0), // test :)
+            duration: uint64(3 days)
+        });
+        snrCoin = new SendAndReceiveCurrency(false);
+        snrCoin.initialize(address(this), initSettings);
+        assertEq(snrCoin.owner(), address(this));
+        (
+            bool open,
+            bool closed,
+            address inputContractAddress,
+            uint256 inputTokenId,
+            uint64 inputAmount,
+            address currencyAddress,
+            uint256 valuePerRedemption,
+            uint64 maxRedemptions,
+            uint64 numRedeemed,
+            uint64 openAt,
+            uint64 duration
+        ) = snrCoin.settings();
+        assertFalse(open);
+        assertFalse(closed);
+        assertEq(inputContractAddress, initSettings.inputContractAddress);
+        assertEq(inputTokenId, initSettings.inputTokenId);
+        assertEq(inputAmount, initSettings.inputAmount);
+        assertEq(currencyAddress, address(coin));
+        assertEq(valuePerRedemption, 0);
+        assertEq(maxRedemptions, initSettings.maxRedemptions);
+        assertEq(numRedeemed, 0);
+        assertEq(openAt, 0);
+        assertEq(duration, initSettings.duration);
+    }
+
     function setUp() public {
         // setup ERC1155TL
         nft = new ERC1155TL(false);
@@ -51,82 +137,25 @@ contract SendAndReceiveCurrencyTest is Test {
         coin = new MockERC20(address(this));
 
         // setup SNR ETH
-        SendAndReceiveCurrency.Settings memory initSettings = SendAndReceiveCurrency.Settings({
-            open: false,
-            inputContractAddress: address(nft),
-            inputTokenId: 1,
-            inputAmount: uint64(1),
-            currencyAddress: address(0),
-            valuePerRedemption: 100 ether, // test :)
-            maxRedemptions: uint64(100),
-            numRedeemed: uint64(10) // test :)
-        });
-        snrEth = new SendAndReceiveCurrency(false);
-        snrEth.initialize(address(this), initSettings);
-        assertEq(snrEth.owner(), address(this));
-        (
-            bool open,
-            address inputContractAddress,
-            uint256 inputTokenId,
-            uint64 inputAmount,
-            address currencyAddress,
-            uint256 valuePerRedemption,
-            uint64 maxRedemptions,
-            uint64 numRedeemed
-        ) = snrEth.settings();
-        assertFalse(open);
-        assertEq(inputContractAddress, initSettings.inputContractAddress);
-        assertEq(inputTokenId, initSettings.inputTokenId);
-        assertEq(inputAmount, initSettings.inputAmount);
-        assertEq(currencyAddress, address(0));
-        assertEq(valuePerRedemption, 0);
-        assertEq(maxRedemptions, initSettings.maxRedemptions);
-        assertEq(numRedeemed, 0);
+        _setup_snrEth();
 
         // setup SNR Coin
-        initSettings = SendAndReceiveCurrency.Settings({
-            open: true, // test :)
-            inputContractAddress: address(nft),
-            inputTokenId: 2,
-            inputAmount: uint64(2),
-            currencyAddress: address(coin),
-            valuePerRedemption: 0,
-            maxRedemptions: uint64(1000),
-            numRedeemed: uint64(0)
-        });
-        snrCoin = new SendAndReceiveCurrency(false);
-        snrCoin.initialize(address(this), initSettings);
-        assertEq(snrCoin.owner(), address(this));
-        (
-            open,
-            inputContractAddress,
-            inputTokenId,
-            inputAmount,
-            currencyAddress,
-            valuePerRedemption,
-            maxRedemptions,
-            numRedeemed
-        ) = snrCoin.settings();
-        assertFalse(open);
-        assertEq(inputContractAddress, initSettings.inputContractAddress);
-        assertEq(inputTokenId, initSettings.inputTokenId);
-        assertEq(inputAmount, initSettings.inputAmount);
-        assertEq(currencyAddress, address(coin));
-        assertEq(valuePerRedemption, 0);
-        assertEq(maxRedemptions, initSettings.maxRedemptions);
-        assertEq(numRedeemed, 0);
+        _setup_snrCoin();
     }
 
     function test_initialize_initializersDisabled() public {
         SendAndReceiveCurrency.Settings memory s = SendAndReceiveCurrency.Settings({
             open: false,
+            closed: false,
             inputContractAddress: address(nft),
             inputTokenId: 1,
             inputAmount: uint64(1),
             currencyAddress: address(0),
             valuePerRedemption: 0,
             maxRedemptions: uint64(100),
-            numRedeemed: uint64(0)
+            numRedeemed: uint64(0),
+            openAt: uint64(0),
+            duration: uint64(365 days)
         });
         SendAndReceiveCurrency snr = new SendAndReceiveCurrency(true);
         vm.expectRevert(Initializable.InvalidInitialization.selector);
@@ -136,13 +165,16 @@ contract SendAndReceiveCurrencyTest is Test {
     function test_initialize_errors() public {
         SendAndReceiveCurrency.Settings memory s = SendAndReceiveCurrency.Settings({
             open: false,
+            closed: false,
             inputContractAddress: address(nft),
             inputTokenId: 1,
             inputAmount: uint64(0),
             currencyAddress: address(0),
             valuePerRedemption: 0,
             maxRedemptions: uint64(100),
-            numRedeemed: uint64(0)
+            numRedeemed: uint64(0),
+            openAt: uint64(0),
+            duration: uint64(365 days)
         });
         SendAndReceiveCurrency snr = new SendAndReceiveCurrency(false);
 
@@ -155,6 +187,24 @@ contract SendAndReceiveCurrencyTest is Test {
         s.maxRedemptions = uint64(0);
         vm.expectRevert(SendAndReceiveCurrency.ZeroRedemptions.selector);
         snr.initialize(address(this), s);
+
+        // invalid input contract
+        s.maxRedemptions = uint64(1);
+        s.inputContractAddress = bsy;
+        vm.expectRevert(SendAndReceiveCurrency.AddressZeroCodeLength.selector);
+        snr.initialize(address(this), s);
+
+        // currency address has no code
+        s.inputContractAddress = address(nft);
+        s.currencyAddress = bsy;
+        vm.expectRevert(SendAndReceiveCurrency.AddressZeroCodeLength.selector);
+        snr.initialize(address(this), s);
+
+        // zero min duration
+        s.currencyAddress = address(0);
+        s.duration = uint64(0);
+        vm.expectRevert(SendAndReceiveCurrency.ZeroDuration.selector);
+        snr.initialize(address(this), s);
     }
 
     function test_accessControl(address hacker) public {
@@ -162,7 +212,11 @@ contract SendAndReceiveCurrencyTest is Test {
 
         vm.prank(hacker);
         vm.expectRevert(abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, hacker));
-        snrEth.openRedemption();
+        snrEth.open();
+
+        vm.prank(hacker);
+        vm.expectRevert(abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, hacker));
+        snrEth.close();
 
         vm.prank(hacker);
         vm.expectRevert(abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, hacker));
@@ -172,7 +226,7 @@ contract SendAndReceiveCurrencyTest is Test {
     function test_depositEth(address sender, uint256 amt) public {
         vm.assume(sender != address(this));
         vm.assume(sender != address(snrEth));
-        amt = bound(amt, 1, 100 ether);
+        amt = bound(amt, 100, 100 ether);
 
         vm.deal(address(this), amt + 1);
         vm.deal(address(sender), amt + 1);
@@ -195,8 +249,9 @@ contract SendAndReceiveCurrencyTest is Test {
         snrCoin.depositEth{value: amt}();
 
         // expect failure if open
-        snrEth.openRedemption();
-        snrCoin.openRedemption();
+        snrEth.open();
+        coin.transfer(address(snrCoin), 1000); // transfer to make sure the following call works
+        snrCoin.open();
         vm.expectRevert(SendAndReceiveCurrency.EthDepositsClosed.selector);
         snrEth.depositEth{value: amt}();
         vm.expectRevert(SendAndReceiveCurrency.EthDepositNotAllowed.selector);
@@ -204,7 +259,7 @@ contract SendAndReceiveCurrencyTest is Test {
     }
 
     function test_withdrawCurrency(uint256 amt) public {
-        amt = bound(amt, 1, 100 ether);
+        amt = bound(amt, 1000, 100 ether);
 
         vm.deal(address(this), amt);
 
@@ -217,7 +272,7 @@ contract SendAndReceiveCurrencyTest is Test {
         // deposit ETH, open, and try to withdraw
         snrEth.depositEth{value: amt}();
         assertEq(address(snrEth).balance, amt);
-        snrEth.openRedemption();
+        snrEth.open();
         vm.expectRevert(SendAndReceiveCurrency.RedemptionOpen.selector);
         snrEth.withdrawCurrency(address(0), address(this), amt);
 
@@ -236,7 +291,7 @@ contract SendAndReceiveCurrencyTest is Test {
         // deposit ERC-20, open, and try to withdraw
         coin.transfer(address(snrCoin), amt);
         assertEq(coin.balanceOf(address(snrCoin)), amt);
-        snrCoin.openRedemption();
+        snrCoin.open();
         vm.expectRevert(SendAndReceiveCurrency.RedemptionOpen.selector);
         snrCoin.withdrawCurrency(address(coin), address(this), amt);
 
@@ -258,11 +313,11 @@ contract SendAndReceiveCurrencyTest is Test {
         nft.safeTransferFrom(bsy, address(snrEth), 1, 1, "");
 
         // open redemption
-        snrEth.openRedemption();
+        snrEth.open();
 
         // try opening again
         vm.expectRevert(SendAndReceiveCurrency.AlreadyConfigured.selector);
-        snrEth.openRedemption();
+        snrEth.open();
 
         // invalid contract address (simulate by sending call directly)
         vm.prank(bsy);
@@ -278,6 +333,13 @@ contract SendAndReceiveCurrencyTest is Test {
         vm.prank(bsy);
         vm.expectRevert(SendAndReceiveCurrency.InvalidAmountSent.selector);
         nft.safeTransferFrom(bsy, address(snrEth), 1, 2, "");
+
+        // close
+        vm.warp(block.timestamp + 366 days);
+        snrEth.close();
+        vm.prank(bsy);
+        vm.expectRevert(SendAndReceiveCurrency.Closed.selector);
+        nft.safeTransferFrom(bsy, address(snrEth), 1, 1, "");
     }
 
     function test_singleTransfer_erc20_errors() public {
@@ -290,11 +352,11 @@ contract SendAndReceiveCurrencyTest is Test {
         nft.safeTransferFrom(bsy, address(snrCoin), 1, 1, "");
 
         // open redemption
-        snrCoin.openRedemption();
+        snrCoin.open();
 
         // try opening again
         vm.expectRevert(SendAndReceiveCurrency.AlreadyConfigured.selector);
-        snrCoin.openRedemption();
+        snrCoin.open();
 
         // invalid contract address (simulate by sending call directly)
         vm.prank(bsy);
@@ -310,28 +372,36 @@ contract SendAndReceiveCurrencyTest is Test {
         vm.prank(bsy);
         vm.expectRevert(SendAndReceiveCurrency.InvalidAmountSent.selector);
         nft.safeTransferFrom(bsy, address(snrCoin), 2, 1, "");
+
+        // close
+        vm.warp(block.timestamp + 4 days);
+        snrCoin.close();
+        vm.prank(bsy);
+        vm.expectRevert(SendAndReceiveCurrency.Closed.selector);
+        nft.safeTransferFrom(bsy, address(snrCoin), 2, 2, "");
     }
 
     function test_singleTransfer_eth(uint256 amt) public {
-        amt = bound(amt, 1, 100 ether);
+        amt = bound(amt, 100, 100 ether);
 
         // deposit ETH
         vm.deal(address(this), amt + 1);
         snrEth.depositEth{value: amt}();
 
         // open redemption
-        snrEth.openRedemption();
-        (bool open,,,,, uint256 valuePerRedemption, uint64 maxRedemptions, uint64 numRedeemed) = snrEth.settings();
+        snrEth.open();
+        (bool open,,,,,, uint256 valuePerRedemption, uint64 maxRedemptions, uint64 numRedeemed, uint64 openAt,) = snrEth.settings();
         uint256 calcValuePerRedemption = amt / uint256(maxRedemptions);
         assertTrue(open);
         assertEq(valuePerRedemption, calcValuePerRedemption);
         assertEq(numRedeemed, 0);
+        assertEq(openAt, uint64(block.timestamp));
 
         // force eth to contract and ensure that it doesn't mess with anything
         vm.deal(address(this), 1 ether);
         ForceSend fs = new ForceSend{value: 1 ether}();
         fs.go(payable(address(snrEth)));
-        (,,,,, valuePerRedemption, maxRedemptions, numRedeemed) = snrEth.settings();
+        (,,,,,, valuePerRedemption, maxRedemptions, numRedeemed,,) = snrEth.settings();
         assertEq(valuePerRedemption, calcValuePerRedemption);
         assertEq(numRedeemed, 0);
 
@@ -344,7 +414,7 @@ contract SendAndReceiveCurrencyTest is Test {
             vm.expectEmit(true, true, false, false);
             emit SendAndReceiveBase.Redeemed(bsy, 1);
             nft.safeTransferFrom(bsy, address(snrEth), 1, 1, "");
-            (,,,,, valuePerRedemption, maxRedemptions, numRedeemed) = snrEth.settings();
+            (,,,,,, valuePerRedemption, maxRedemptions, numRedeemed,,) = snrEth.settings();
             assertEq(valuePerRedemption, calcValuePerRedemption);
             assertEq(numRedeemed, i);
             assertEq(address(snrEth).balance, snrInitBalance - calcValuePerRedemption * i);
@@ -359,7 +429,7 @@ contract SendAndReceiveCurrencyTest is Test {
             vm.expectEmit(true, true, false, false);
             emit SendAndReceiveBase.Redeemed(bob, 1);
             nft.safeTransferFrom(bob, address(snrEth), 1, 1, "");
-            (,,,,, valuePerRedemption, maxRedemptions, numRedeemed) = snrEth.settings();
+            (,,,,,, valuePerRedemption, maxRedemptions, numRedeemed,,) = snrEth.settings();
             assertEq(valuePerRedemption, calcValuePerRedemption);
             assertEq(numRedeemed, i);
             assertEq(address(snrEth).balance, snrInitBalance - calcValuePerRedemption * i);
@@ -373,7 +443,7 @@ contract SendAndReceiveCurrencyTest is Test {
         vm.expectEmit(true, true, false, false);
         emit SendAndReceiveBase.Redeemed(ace, 1);
         nft.safeTransferFrom(ace, address(snrEth), 1, 1, "");
-        (,,,,, valuePerRedemption, maxRedemptions, numRedeemed) = snrEth.settings();
+        (,,,,,, valuePerRedemption, maxRedemptions, numRedeemed,,) = snrEth.settings();
         assertEq(valuePerRedemption, calcValuePerRedemption);
         assertEq(numRedeemed, 100);
         assertEq(address(snrEth).balance, snrInitBalance - calcValuePerRedemption * 100);
@@ -393,22 +463,23 @@ contract SendAndReceiveCurrencyTest is Test {
     }
 
     function test_singleTransfer_erc20(uint256 amt) public {
-        amt = bound(amt, 1, 100 ether);
+        amt = bound(amt, 1000, 100 ether);
 
         // deposit ERC-20
         coin.transfer(address(snrCoin), amt);
 
         // open redemption
-        snrCoin.openRedemption();
-        (bool open,,,,, uint256 valuePerRedemption, uint64 maxRedemptions, uint64 numRedeemed) = snrCoin.settings();
+        snrCoin.open();
+        (bool open,,,,,, uint256 valuePerRedemption, uint64 maxRedemptions, uint64 numRedeemed, uint64 openAt,) = snrCoin.settings();
         uint256 calcValuePerRedemption = amt / uint256(maxRedemptions);
         assertTrue(open);
         assertEq(valuePerRedemption, calcValuePerRedemption);
         assertEq(numRedeemed, 0);
+        assertEq(openAt, uint64(block.timestamp));
 
         // force coin to contract and ensure that it doesn't mess with anything
         coin.transfer(address(snrCoin), 1 ether);
-        (,,,,, valuePerRedemption, maxRedemptions, numRedeemed) = snrCoin.settings();
+        (,,,,,, valuePerRedemption, maxRedemptions, numRedeemed,,) = snrCoin.settings();
         assertEq(valuePerRedemption, calcValuePerRedemption);
         assertEq(numRedeemed, 0);
 
@@ -421,7 +492,7 @@ contract SendAndReceiveCurrencyTest is Test {
             vm.expectEmit(true, true, false, false);
             emit SendAndReceiveBase.Redeemed(bsy, 1);
             nft.safeTransferFrom(bsy, address(snrCoin), 2, 2, "");
-            (,,,,, valuePerRedemption, maxRedemptions, numRedeemed) = snrCoin.settings();
+            (,,,,,, valuePerRedemption, maxRedemptions, numRedeemed,,) = snrCoin.settings();
             assertEq(valuePerRedemption, calcValuePerRedemption);
             assertEq(numRedeemed, i);
             assertEq(coin.balanceOf(address(snrCoin)), snrInitBalance - calcValuePerRedemption * i);
@@ -436,7 +507,7 @@ contract SendAndReceiveCurrencyTest is Test {
             vm.expectEmit(true, true, false, false);
             emit SendAndReceiveBase.Redeemed(bob, 1);
             nft.safeTransferFrom(bob, address(snrCoin), 2, 2, "");
-            (,,,,, valuePerRedemption, maxRedemptions, numRedeemed) = snrCoin.settings();
+            (,,,,,, valuePerRedemption, maxRedemptions, numRedeemed,,) = snrCoin.settings();
             assertEq(valuePerRedemption, calcValuePerRedemption);
             assertEq(numRedeemed, i);
             assertEq(coin.balanceOf(address(snrCoin)), snrInitBalance - calcValuePerRedemption * i);
@@ -450,7 +521,7 @@ contract SendAndReceiveCurrencyTest is Test {
         vm.expectEmit(true, true, false, false);
         emit SendAndReceiveBase.Redeemed(ace, 1);
         nft.safeTransferFrom(ace, address(snrCoin), 2, 2, "");
-        (,,,,, valuePerRedemption, maxRedemptions, numRedeemed) = snrCoin.settings();
+        (,,,,,, valuePerRedemption, maxRedemptions, numRedeemed,,) = snrCoin.settings();
         assertEq(valuePerRedemption, calcValuePerRedemption);
         assertEq(numRedeemed, 100);
         assertEq(coin.balanceOf(address(snrCoin)), snrInitBalance - calcValuePerRedemption * 100);
@@ -464,7 +535,7 @@ contract SendAndReceiveCurrencyTest is Test {
             vm.expectEmit(true, true, false, false);
             emit SendAndReceiveBase.Redeemed(bsy, 1);
             nft.safeTransferFrom(bsy, address(snrCoin), 2, 2, "");
-            (,,,,, valuePerRedemption, maxRedemptions, numRedeemed) = snrCoin.settings();
+            (,,,,,, valuePerRedemption, maxRedemptions, numRedeemed,,) = snrCoin.settings();
             assertEq(valuePerRedemption, calcValuePerRedemption);
             assertEq(numRedeemed, i);
             assertEq(coin.balanceOf(address(snrCoin)), snrInitBalance - calcValuePerRedemption * i);
@@ -502,11 +573,11 @@ contract SendAndReceiveCurrencyTest is Test {
         nft.safeBatchTransferFrom(bsy, address(snrEth), ids, values, "");
 
         // open redemption
-        snrEth.openRedemption();
+        snrEth.open();
 
         // try opening again
         vm.expectRevert(SendAndReceiveCurrency.AlreadyConfigured.selector);
-        snrEth.openRedemption();
+        snrEth.open();
 
         // invalid contract address (simulate by sending call directly)
         vm.prank(bsy);
@@ -537,6 +608,14 @@ contract SendAndReceiveCurrencyTest is Test {
         vm.prank(bsy);
         vm.expectRevert(SendAndReceiveCurrency.InvalidAmountSent.selector);
         nft.safeBatchTransferFrom(bsy, address(snrEth), ids, values, "");
+
+        // close
+        values[1] = 1;
+        vm.warp(block.timestamp + 366 days);
+        snrEth.close();
+        vm.prank(bsy);
+        vm.expectRevert(SendAndReceiveCurrency.Closed.selector);
+        nft.safeBatchTransferFrom(bsy, address(snrEth), ids, values, "");
     }
 
     function test_batchTransfer_erc20_errors() public {
@@ -556,11 +635,11 @@ contract SendAndReceiveCurrencyTest is Test {
         nft.safeBatchTransferFrom(bsy, address(snrCoin), ids, values, "");
 
         // open redemption
-        snrCoin.openRedemption();
+        snrCoin.open();
 
         // try opening again
         vm.expectRevert(SendAndReceiveCurrency.AlreadyConfigured.selector);
-        snrCoin.openRedemption();
+        snrCoin.open();
 
         // invalid contract address (simulate by sending call directly)
         vm.prank(bsy);
@@ -591,28 +670,37 @@ contract SendAndReceiveCurrencyTest is Test {
         vm.prank(bsy);
         vm.expectRevert(SendAndReceiveCurrency.InvalidAmountSent.selector);
         nft.safeBatchTransferFrom(bsy, address(snrCoin), ids, values, "");
+
+        // close
+        values[1] = 2;
+        vm.warp(block.timestamp + 4 days);
+        snrCoin.close();
+        vm.prank(bsy);
+        vm.expectRevert(SendAndReceiveCurrency.Closed.selector);
+        nft.safeBatchTransferFrom(bsy, address(snrCoin), ids, values, "");
     }
 
     function test_batchTransfer_eth(uint256 amt) public {
-        amt = bound(amt, 1, 100 ether);
+        amt = bound(amt, 100, 100 ether);
 
         // deposit ETH
         vm.deal(address(this), amt + 1);
         snrEth.depositEth{value: amt}();
 
         // open redemption
-        snrEth.openRedemption();
-        (bool open,,,,, uint256 valuePerRedemption, uint64 maxRedemptions, uint64 numRedeemed) = snrEth.settings();
+        snrEth.open();
+        (bool open,,,,,, uint256 valuePerRedemption, uint64 maxRedemptions, uint64 numRedeemed, uint64 openAt,) = snrEth.settings();
         uint256 calcValuePerRedemption = amt / uint256(maxRedemptions);
         assertTrue(open);
         assertEq(valuePerRedemption, calcValuePerRedemption);
         assertEq(numRedeemed, 0);
+        assertEq(openAt, uint64(block.timestamp));
 
         // force eth to contract and ensure that it doesn't mess with anything
         vm.deal(address(this), 1 ether);
         ForceSend fs = new ForceSend{value: 1 ether}();
         fs.go(payable(address(snrEth)));
-        (,,,,, valuePerRedemption, maxRedemptions, numRedeemed) = snrEth.settings();
+        (,,,,,, valuePerRedemption, maxRedemptions, numRedeemed,,) = snrEth.settings();
         assertEq(valuePerRedemption, calcValuePerRedemption);
         assertEq(numRedeemed, 0);
 
@@ -632,7 +720,7 @@ contract SendAndReceiveCurrencyTest is Test {
         vm.expectEmit(true, true, false, false);
         emit SendAndReceiveBase.Redeemed(bsy, 50);
         nft.safeBatchTransferFrom(bsy, address(snrEth), ids, values, "");
-        (,,,,, valuePerRedemption, maxRedemptions, numRedeemed) = snrEth.settings();
+        (,,,,,, valuePerRedemption, maxRedemptions, numRedeemed,,) = snrEth.settings();
         assertEq(valuePerRedemption, calcValuePerRedemption);
         assertEq(numRedeemed, 50);
         assertEq(address(snrEth).balance, snrInitBalance - calcValuePerRedemption * 50);
@@ -651,7 +739,7 @@ contract SendAndReceiveCurrencyTest is Test {
         vm.expectEmit(true, true, false, false);
         emit SendAndReceiveBase.Redeemed(bob, 49);
         nft.safeBatchTransferFrom(bob, address(snrEth), ids, values, "");
-        (,,,,, valuePerRedemption, maxRedemptions, numRedeemed) = snrEth.settings();
+        (,,,,,, valuePerRedemption, maxRedemptions, numRedeemed,,) = snrEth.settings();
         assertEq(valuePerRedemption, calcValuePerRedemption);
         assertEq(numRedeemed, 99);
         assertEq(address(snrEth).balance, snrInitBalance - calcValuePerRedemption * 99);
@@ -668,7 +756,7 @@ contract SendAndReceiveCurrencyTest is Test {
         vm.expectEmit(true, true, false, false);
         emit SendAndReceiveBase.Redeemed(ace, 1);
         nft.safeBatchTransferFrom(ace, address(snrEth), ids, values, "");
-        (,,,,, valuePerRedemption, maxRedemptions, numRedeemed) = snrEth.settings();
+        (,,,,,, valuePerRedemption, maxRedemptions, numRedeemed,,) = snrEth.settings();
         assertEq(valuePerRedemption, calcValuePerRedemption);
         assertEq(numRedeemed, 100);
         assertEq(address(snrEth).balance, snrInitBalance - calcValuePerRedemption * 100);
@@ -688,22 +776,23 @@ contract SendAndReceiveCurrencyTest is Test {
     }
 
     function test_batchTransfer_erc20(uint256 amt) public {
-        amt = bound(amt, 1, 100 ether);
+        amt = bound(amt, 1000, 100 ether);
 
         // deposit ERC-20
         coin.transfer(address(snrCoin), amt);
 
         // open redemption
-        snrCoin.openRedemption();
-        (bool open,,,,, uint256 valuePerRedemption, uint64 maxRedemptions, uint64 numRedeemed) = snrCoin.settings();
+        snrCoin.open();
+        (bool open,,,,,, uint256 valuePerRedemption, uint64 maxRedemptions, uint64 numRedeemed, uint64 openAt,) = snrCoin.settings();
         uint256 calcValuePerRedemption = amt / uint256(maxRedemptions);
         assertTrue(open);
         assertEq(valuePerRedemption, calcValuePerRedemption);
         assertEq(numRedeemed, 0);
+        assertEq(openAt, uint64(block.timestamp));
 
         // force eth to contract and ensure that it doesn't mess with anything
         coin.transfer(address(snrCoin), 1 ether);
-        (,,,,, valuePerRedemption, maxRedemptions, numRedeemed) = snrCoin.settings();
+        (,,,,,, valuePerRedemption, maxRedemptions, numRedeemed,,) = snrCoin.settings();
         assertEq(valuePerRedemption, calcValuePerRedemption);
         assertEq(numRedeemed, 0);
 
@@ -723,7 +812,7 @@ contract SendAndReceiveCurrencyTest is Test {
         vm.expectEmit(true, true, false, false);
         emit SendAndReceiveBase.Redeemed(bsy, 50);
         nft.safeBatchTransferFrom(bsy, address(snrCoin), ids, values, "");
-        (,,,,, valuePerRedemption, maxRedemptions, numRedeemed) = snrCoin.settings();
+        (,,,,,, valuePerRedemption, maxRedemptions, numRedeemed,,) = snrCoin.settings();
         assertEq(valuePerRedemption, calcValuePerRedemption);
         assertEq(numRedeemed, 50);
         assertEq(coin.balanceOf(address(snrCoin)), snrInitBalance - calcValuePerRedemption * 50);
@@ -742,7 +831,7 @@ contract SendAndReceiveCurrencyTest is Test {
         vm.expectEmit(true, true, false, false);
         emit SendAndReceiveBase.Redeemed(bob, 49);
         nft.safeBatchTransferFrom(bob, address(snrCoin), ids, values, "");
-        (,,,,, valuePerRedemption, maxRedemptions, numRedeemed) = snrCoin.settings();
+        (,,,,,, valuePerRedemption, maxRedemptions, numRedeemed,,) = snrCoin.settings();
         assertEq(valuePerRedemption, calcValuePerRedemption);
         assertEq(numRedeemed, 99);
         assertEq(coin.balanceOf(address(snrCoin)), snrInitBalance - calcValuePerRedemption * 99);
@@ -759,7 +848,7 @@ contract SendAndReceiveCurrencyTest is Test {
         vm.expectEmit(true, true, false, false);
         emit SendAndReceiveBase.Redeemed(ace, 1);
         nft.safeBatchTransferFrom(ace, address(snrCoin), ids, values, "");
-        (,,,,, valuePerRedemption, maxRedemptions, numRedeemed) = snrCoin.settings();
+        (,,,,,, valuePerRedemption, maxRedemptions, numRedeemed,,) = snrCoin.settings();
         assertEq(valuePerRedemption, calcValuePerRedemption);
         assertEq(numRedeemed, 100);
         assertEq(coin.balanceOf(address(snrCoin)), snrInitBalance - calcValuePerRedemption * 100);
@@ -778,7 +867,7 @@ contract SendAndReceiveCurrencyTest is Test {
         vm.expectEmit(true, true, false, false);
         emit SendAndReceiveBase.Redeemed(bsy, 900);
         nft.safeBatchTransferFrom(bsy, address(snrCoin), ids, values, "");
-        (,,,,, valuePerRedemption, maxRedemptions, numRedeemed) = snrCoin.settings();
+        (,,,,,, valuePerRedemption, maxRedemptions, numRedeemed,,) = snrCoin.settings();
         assertEq(valuePerRedemption, calcValuePerRedemption);
         assertEq(numRedeemed, 1000);
         assertEq(coin.balanceOf(address(snrCoin)), snrInitBalance - calcValuePerRedemption * 1000);
@@ -795,5 +884,100 @@ contract SendAndReceiveCurrencyTest is Test {
         snrCoin.withdrawCurrency(address(coin), sink, 1 ether);
         assertLt(coin.balanceOf(address(snrCoin)), 1000); // less than 100 wei of dust
         assertEq(coin.balanceOf(sink), 1 ether);
+    }
+
+    function test_open_notEnoughvalue() public {
+        vm.expectRevert(SendAndReceiveCurrency.ZeroValuePerRedemption.selector);
+        snrEth.open();
+
+        vm.expectRevert(SendAndReceiveCurrency.ZeroValuePerRedemption.selector);
+        snrCoin.open();
+    }
+
+    function test_closed_eth() public {
+        // deposit eth
+        vm.deal(address(this), 1 ether);
+        snrEth.depositEth{value: 1 ether}();
+
+        // try to close before open
+        vm.expectRevert(SendAndReceiveCurrency.NotOpen.selector);
+        snrEth.close();
+
+        // open
+        snrEth.open();
+
+        // redeem a few
+        vm.prank(bsy);
+        nft.safeTransferFrom(bsy, address(snrEth), 1, 1, "");
+        vm.prank(bob);
+        nft.safeTransferFrom(bob, address(snrEth), 1, 1, "");
+        vm.prank(ace);
+        nft.safeTransferFrom(ace, address(snrEth), 1, 1, "");
+
+        // try to close before time is up
+        vm.expectRevert(SendAndReceiveCurrency.CannotClose.selector);
+        snrEth.close();
+
+        // close
+        vm.warp(block.timestamp + 366 days);
+        snrEth.close();
+
+        // try to redeem
+        vm.prank(bsy);
+        vm.expectRevert(SendAndReceiveCurrency.Closed.selector);
+        nft.safeTransferFrom(bsy, address(snrEth), 1, 1, "");
+
+        // try to open again
+        vm.expectRevert(SendAndReceiveCurrency.Closed.selector);
+        snrEth.open();
+
+        // withdraw currency
+        assertEq(address(this).balance, 0);
+        snrEth.withdrawCurrency(address(0), address(this), address(snrEth).balance);
+        assertLt(address(this).balance, 1 ether);
+        assertGt(address(this).balance, 0);
+    }
+
+    function test_closed_erc20() public {
+        // deposit coin
+        coin.transfer(address(snrCoin), 1 ether);
+
+        // try to close before open
+        vm.expectRevert(SendAndReceiveCurrency.NotOpen.selector);
+        snrCoin.close();
+
+        // open
+        snrCoin.open();
+
+        // redeem a few
+        vm.prank(bsy);
+        nft.safeTransferFrom(bsy, address(snrCoin), 2, 2, "");
+        vm.prank(bob);
+        nft.safeTransferFrom(bob, address(snrCoin), 2, 2, "");
+        vm.prank(ace);
+        nft.safeTransferFrom(ace, address(snrCoin), 2, 2, "");
+
+        // try to close before time is up
+        vm.expectRevert(SendAndReceiveCurrency.CannotClose.selector);
+        snrCoin.close();
+
+        // close
+        vm.warp(block.timestamp + 4 days);
+        snrCoin.close();
+
+        // try to redeem
+        vm.prank(bsy);
+        vm.expectRevert(SendAndReceiveCurrency.Closed.selector);
+        nft.safeTransferFrom(bsy, address(snrCoin), 2, 2, "");
+
+        // try to open again
+        vm.expectRevert(SendAndReceiveCurrency.Closed.selector);
+        snrCoin.open();
+
+        // withdraw currency
+        assertEq(coin.balanceOf(sink), 0);
+        snrCoin.withdrawCurrency(address(coin), address(sink), coin.balanceOf(address(snrCoin)));
+        assertLt(coin.balanceOf(sink), 1 ether);
+        assertGt(coin.balanceOf(sink), 0);
     }
 }

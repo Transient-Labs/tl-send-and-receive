@@ -47,7 +47,7 @@ contract SendAndReceiveERC1155TLTest is Test {
             outputContractAddress: address(nft),
             outputTokenId: 4,
             inputTokenSink: sink,
-            openAt: uint64(0),
+            openAt: uint64(block.timestamp + 1 days),
             duration: uint64(48 hours),
             maxRedemptions: uint64(100),
             numRedeemed: uint64(0)
@@ -72,7 +72,7 @@ contract SendAndReceiveERC1155TLTest is Test {
         assertEq(outputContractAddress, initSettings.outputContractAddress);
         assertEq(outputTokenId, initSettings.outputTokenId);
         assertEq(inputTokenSink, initSettings.inputTokenSink);
-        assertEq(openAt, block.timestamp);
+        assertEq(openAt, block.timestamp + 1 days);
         assertEq(duration, initSettings.duration);
         assertEq(maxRedemptions, initSettings.maxRedemptions);
         assertEq(numRedeemed, 0);
@@ -80,8 +80,6 @@ contract SendAndReceiveERC1155TLTest is Test {
         assertEq(snr.getInputAmount(address(nft), 1), 1, "token 1 mismatch");
         assertEq(snr.getInputAmount(address(nft), 2), 2, "token 2 mismatch");
         assertEq(snr.getInputAmount(address(nft), 3), 0, "token 3 mismatch");
-
-        assertEq(snr.getInputConfigs().length, 2);
 
         // set mint contract
         address[] memory mintContracts = new address[](1);
@@ -106,7 +104,7 @@ contract SendAndReceiveERC1155TLTest is Test {
         snr2.initialize(address(this), s, inputConfigs);
     }
 
-    function test_initialize_zeroSink() public {
+    function test_initialize_errors() public {
         SendAndReceiveERC1155TL.Settings memory s = SendAndReceiveERC1155TL.Settings({
             closed: false,
             outputContractAddress: address(nft),
@@ -119,7 +117,21 @@ contract SendAndReceiveERC1155TLTest is Test {
         });
         SendAndReceiveERC1155TL.InputConfig[] memory inputConfigs = new SendAndReceiveERC1155TL.InputConfig[](0);
         SendAndReceiveERC1155TL snr2 = new SendAndReceiveERC1155TL(false);
+
+        // zero sink
         vm.expectRevert(SendAndReceiveERC1155TL.ZeroAddressSink.selector);
+        snr2.initialize(address(this), s, inputConfigs);
+
+        // output zero contract code
+        s.inputTokenSink = sink;
+        s.outputContractAddress = bsy;
+        vm.expectRevert(SendAndReceiveERC1155TL.AddressZeroCodeLength.selector);
+        snr2.initialize(address(this), s, inputConfigs);
+
+        // zero redemptions
+        s.outputContractAddress = address(nft);
+        s.maxRedemptions = uint64(0);
+        vm.expectRevert(SendAndReceiveERC1155TL.ZeroRedemptions.selector);
         snr2.initialize(address(this), s, inputConfigs);
     }
 
@@ -142,7 +154,8 @@ contract SendAndReceiveERC1155TLTest is Test {
         snr.close();
     }
 
-    function test_configureInputs_tooManyConfigs() public {
+    function test_configureInputs_errors() public {
+        // too many configs
         uint256 n = 33; // > MAX_INPUT_CONFIGS_PER_TX (32)
         SendAndReceiveERC1155TL.InputConfig[] memory arr = new SendAndReceiveERC1155TL.InputConfig[](n);
         for (uint256 i = 0; i < n; ++i) {
@@ -150,52 +163,118 @@ contract SendAndReceiveERC1155TLTest is Test {
         }
         vm.expectRevert(SendAndReceiveERC1155TL.TooManyInputConfigs.selector);
         snr.configureInputs(arr);
+
+        arr = new SendAndReceiveERC1155TL.InputConfig[](1);
+        arr[0] = SendAndReceiveERC1155TL.InputConfig({contractAddress: bsy, tokenId: 10, amount: 1});
+        vm.expectRevert(SendAndReceiveERC1155TL.AddressZeroCodeLength.selector);
+        snr.configureInputs(arr);
+
+        vm.warp(block.timestamp + 1 days);
+        vm.expectRevert(SendAndReceiveERC1155TL.CannotChangeInputsOnceOpen.selector);
+        snr.configureInputs(arr);
     }
 
-    function test_updateSettings_zeroSink() public {
-        vm.expectRevert(SendAndReceiveERC1155TL.ZeroAddressSink.selector);
-        snr.updateSettings(uint64(0), uint64(1 days), uint64(10), address(0));
-    }
-
-    function test_updateSettings_updatesFields() public {
-        snr.updateSettings(uint64(block.timestamp + 10), uint64(7 days), uint64(1234), address(0xABCD));
+    function test_updateSettings() public {
+        SendAndReceiveERC1155TL.Settings memory s = SendAndReceiveERC1155TL.Settings({
+            closed: false,
+            outputContractAddress: address(nft),
+            outputTokenId: 4,
+            inputTokenSink: sink,
+            openAt: uint64(block.timestamp + 1 days),
+            duration: uint64(1 days),
+            maxRedemptions: uint64(5),
+            numRedeemed: uint64(0)
+        });
+        SendAndReceiveERC1155TL.InputConfig[] memory inputConfigs = new SendAndReceiveERC1155TL.InputConfig[](0);
+        SendAndReceiveERC1155TL snr2 = new SendAndReceiveERC1155TL(false);
+        snr2.initialize(address(this), s, inputConfigs);
         (
-            bool closed,
-            address outputContractAddress,
-            uint256 outputTokenId,
+            ,
+            ,
+            ,
             address inputTokenSink,
             uint64 openAt,
             uint64 duration,
             uint64 maxRedemptions,
-            uint64 numRedeemed
-        ) = snr.settings();
+        ) = snr2.settings();
 
-        assertFalse(closed);
-        assertEq(outputContractAddress, address(nft));
-        assertEq(outputTokenId, 4);
-        assertEq(inputTokenSink, address(0xABCD));
-        assertEq(openAt, uint64(block.timestamp + 10));
-        assertEq(duration, uint64(7 days));
-        assertEq(maxRedemptions, 1234);
-        assertEq(numRedeemed, 0);
+        // adjust settings before open
+        snr2.updateSettings(uint64(block.timestamp + 1 days), uint64(2 days), uint64(10), bsy);
+         (
+            ,
+            ,
+            ,
+            inputTokenSink,
+            openAt,
+            duration,
+            maxRedemptions,
+        ) = snr2.settings();
+        assertEq(inputTokenSink, bsy);
+        assertEq(openAt, block.timestamp + uint64(1 days));
+        assertEq(duration, uint64(2 days));
+        assertEq(maxRedemptions, uint64(10));
+
+        // zero sink error
+        vm.expectRevert(SendAndReceiveERC1155TL.ZeroAddressSink.selector);
+        snr2.updateSettings(openAt, duration, maxRedemptions, address(0));
+
+        // change open time error
+        vm.warp(openAt);
+        vm.expectRevert(SendAndReceiveERC1155TL.CannotChangeOpenTimeOnceStarted.selector);
+        snr2.updateSettings(uint64(openAt - 1), duration, maxRedemptions, inputTokenSink);
+        vm.expectRevert(SendAndReceiveERC1155TL.CannotChangeOpenTimeOnceStarted.selector);
+        snr2.updateSettings(uint64(openAt + 1), duration, maxRedemptions, inputTokenSink);
+
+        // cannot chain duration
+        vm.expectRevert(SendAndReceiveERC1155TL.CannotChangeDurationOnceStarted.selector);
+        snr2.updateSettings(openAt, duration - uint64(1), maxRedemptions, inputTokenSink);
+        vm.expectRevert(SendAndReceiveERC1155TL.CannotChangeDurationOnceStarted.selector);
+        snr2.updateSettings(openAt, duration + uint64(1), maxRedemptions, inputTokenSink);
+
+        // cannot change redemptions once opened
+        vm.expectRevert(SendAndReceiveERC1155TL.CannotChangeMaxRedemptionsOnceStarted.selector);
+        snr2.updateSettings(openAt, duration, maxRedemptions - uint64(1), inputTokenSink);
+        vm.expectRevert(SendAndReceiveERC1155TL.CannotChangeMaxRedemptionsOnceStarted.selector);
+        snr2.updateSettings(openAt, duration, maxRedemptions + uint64(1), inputTokenSink);
+
+        // zero sink error
+        vm.expectRevert(SendAndReceiveERC1155TL.ZeroAddressSink.selector);
+        snr2.updateSettings(openAt, duration, maxRedemptions, address(0));
+
+        // can change sink address once open
+        snr2.updateSettings(openAt, duration, maxRedemptions, sink);
+        (
+            ,
+            ,
+            ,
+            inputTokenSink,
+            openAt,
+            duration,
+            maxRedemptions,
+        ) = snr2.settings();
+        assertEq(inputTokenSink, sink);
     }
 
     function test_singleTransfer_errors() public {
+        (
+            ,
+            ,
+            ,
+            ,
+            uint64 openAt,
+            uint64 duration,
+            uint64 maxRedemptions,
+        ) = snr.settings();
+
         // not open
-        snr.updateSettings(uint64(block.timestamp + 1 days), uint64(48 hours), uint64(1000), sink);
         vm.prank(bsy);
         vm.expectRevert(SendAndReceiveERC1155TL.NotOpen.selector);
         nft.safeTransferFrom(bsy, address(snr), 1, 1, "");
 
-        // window passed
-        snr.updateSettings(uint64(1), uint64(2), uint64(1000), sink);
-        vm.warp(10);
-        vm.prank(bsy);
-        vm.expectRevert(SendAndReceiveERC1155TL.NotOpen.selector);
-        nft.safeTransferFrom(bsy, address(snr), 1, 1, "");
+        // warp to open time
+        vm.warp(openAt);
 
         // invalid input token
-        snr.updateSettings(uint64(block.timestamp), uint64(2 days), uint64(1000), sink);
         vm.prank(bsy);
         vm.expectRevert(SendAndReceiveERC1155TL.InvalidInputToken.selector);
         nft.safeTransferFrom(bsy, address(snr), 3, 1, "");
@@ -210,10 +289,10 @@ contract SendAndReceiveERC1155TLTest is Test {
         vm.expectRevert(SendAndReceiveERC1155TL.InvalidAmountSent.selector);
         nft.safeTransferFrom(bsy, address(snr), 2, 1, "");
 
-        // closed
-        snr.close();
+        // window passed
+        vm.warp(openAt + duration + 1);
         vm.prank(bsy);
-        vm.expectRevert(SendAndReceiveERC1155TL.Closed.selector);
+        vm.expectRevert(SendAndReceiveERC1155TL.NotOpen.selector);
         nft.safeTransferFrom(bsy, address(snr), 1, 1, "");
     }
 
@@ -226,6 +305,9 @@ contract SendAndReceiveERC1155TLTest is Test {
         amt1 = bound(amt1, 1, 1000);
         amt2 = bound(amt2, 2, 1000);
         if (amt2 % 2 != 0) amt2 -= 1;
+
+        // warp to start time
+        vm.warp(block.timestamp + 1 days);
 
         // mint tokens 1 & 2 to the sender
         address[] memory addresses = new address[](1);
@@ -299,21 +381,24 @@ contract SendAndReceiveERC1155TLTest is Test {
         values[0] = 1;
         values[1] = 2;
 
+        (
+            ,
+            ,
+            ,
+            ,
+            uint64 openAt,
+            uint64 duration,
+            uint64 maxRedemptions,
+        ) = snr.settings();
+
         // not open
-        snr.updateSettings(uint64(block.timestamp + 1 days), uint64(48 hours), uint64(1000), sink);
         vm.prank(bsy);
         vm.expectRevert(SendAndReceiveERC1155TL.NotOpen.selector);
         nft.safeBatchTransferFrom(bsy, address(snr), ids, values, "");
 
-        // window passed
-        snr.updateSettings(uint64(1), uint64(2), uint64(1000), sink);
-        vm.warp(10);
-        vm.prank(bsy);
-        vm.expectRevert(SendAndReceiveERC1155TL.NotOpen.selector);
-        nft.safeBatchTransferFrom(bsy, address(snr), ids, values, "");
+        vm.warp(openAt);
 
         // invalid input token
-        snr.updateSettings(uint64(block.timestamp), uint64(2 days), uint64(1000), sink);
         ids[0] = 3;
         vm.prank(bsy);
         vm.expectRevert(SendAndReceiveERC1155TL.InvalidInputToken.selector);
@@ -331,12 +416,12 @@ contract SendAndReceiveERC1155TLTest is Test {
         vm.expectRevert(SendAndReceiveERC1155TL.InvalidAmountSent.selector);
         nft.safeBatchTransferFrom(bsy, address(snr), ids, values, "");
 
-        // closed
+        // window passed
         values[0] = 1;
-        snr.close();
+        vm.warp(openAt + duration + 1);
         vm.prank(bsy);
-        vm.expectRevert(SendAndReceiveERC1155TL.Closed.selector);
-        nft.safeBatchTransferFrom(bsy, address(snr), ids, values, "");
+        vm.expectRevert(SendAndReceiveERC1155TL.NotOpen.selector);
+        nft.safeBatchTransferFrom(bsy, address(snr), ids, values, "");  
     }
 
     function test_batchTransfer(address sender, uint256 amt1) public {
@@ -354,6 +439,9 @@ contract SendAndReceiveERC1155TLTest is Test {
         uint256[] memory values = new uint256[](2);
         values[0] = 1;
         values[1] = 2;
+
+        // warp to start time
+        vm.warp(block.timestamp + 1 days);
 
         // mint tokens 1 & 2 to the sender
         address[] memory addresses = new address[](1);
@@ -397,5 +485,24 @@ contract SendAndReceiveERC1155TLTest is Test {
 
         // check outputs
         assertEq(nft.balanceOf(sender, 4), totalRedeemed, "sender didn't get all the redemptions they should");
+    }
+
+    function test_closed_errors() public {
+        snr.close();
+
+        vm.prank(bsy);
+        vm.expectRevert(SendAndReceiveERC1155TL.Closed.selector);
+        nft.safeTransferFrom(bsy, address(snr), 1, 1, "");
+
+        uint256[] memory ids = new uint256[](2);
+        ids[0] = 1;
+        ids[1] = 2;
+        uint256[] memory values = new uint256[](2);
+        values[0] = 1;
+        values[1] = 2;
+
+        vm.prank(bsy);
+        vm.expectRevert(SendAndReceiveERC1155TL.Closed.selector);
+        nft.safeBatchTransferFrom(bsy, address(snr), ids, values, "");
     }
 }

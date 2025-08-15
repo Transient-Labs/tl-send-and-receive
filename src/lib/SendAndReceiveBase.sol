@@ -38,6 +38,7 @@ abstract contract SendAndReceiveBase is
 
     event Redeemed(address indexed recipient, uint256 indexed amount);
     event RedemptionClosed();
+    event SettingsUpdated();
 
     ////////////////////////////////////////////////////////////////////////////
     // Errors
@@ -46,6 +47,7 @@ abstract contract SendAndReceiveBase is
     error FromZeroAddress();
     error ArrayLengthMismatch();
     error ZeroAmountSent();
+    error CannotSendToZeroAddress();
 
     ////////////////////////////////////////////////////////////////////////////
     // Redemption Functions
@@ -147,6 +149,7 @@ abstract contract SendAndReceiveBase is
 
     /// @notice Internal helper function to send currency based on currency address and value
     function _sendCurrency(address currencyAddress, address recipient, uint256 value) internal {
+        if (recipient == address(0)) revert CannotSendToZeroAddress();
         if (currencyAddress == address(0)) {
             // using Address.sendValue is fine here against griefing as it can't be used to block anyone else's actions
             payable(recipient).sendValue(value);

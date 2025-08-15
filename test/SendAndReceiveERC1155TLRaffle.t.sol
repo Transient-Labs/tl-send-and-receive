@@ -21,6 +21,8 @@ contract SendAndReceiveERC1155TLRaffleTest is Test {
 
     uint256 amt = type(uint64).max;
 
+    uint256 openTime = 42069;
+
     bytes32 seed = keccak256("seed");
     string salt = "salt";
     bytes32 seedHash = keccak256(abi.encode(seed, salt));
@@ -55,7 +57,7 @@ contract SendAndReceiveERC1155TLRaffleTest is Test {
             inputTokenId: 1,
             inputAmount: 1,
             inputTokenSink: sink,
-            openAt: uint64(0),
+            openAt: uint64(openTime),
             duration: uint64(48 hours),
             numWinners: uint64(1),
             numEntries: uint64(10) // test :)
@@ -83,7 +85,7 @@ contract SendAndReceiveERC1155TLRaffleTest is Test {
         assertEq(inputTokenId, initSettings.inputTokenId);
         assertEq(inputAmount, initSettings.inputAmount);
         assertEq(inputTokenSink, initSettings.inputTokenSink);
-        assertEq(openAt, block.timestamp);
+        assertEq(openAt, openTime);
         assertEq(duration, initSettings.duration);
         assertEq(numWinners, initSettings.numWinners);
         assertEq(numEntries, 0);
@@ -116,6 +118,25 @@ contract SendAndReceiveERC1155TLRaffleTest is Test {
         });
         SendAndReceiveERC1155TLRaffle snr2 = new SendAndReceiveERC1155TLRaffle(true);
         vm.expectRevert(Initializable.InvalidInitialization.selector);
+        snr2.initialize(address(this), s, seedHash);
+    }
+
+    function test_initialize_zeroInputCode() public {
+        SendAndReceiveERC1155TLRaffle.Settings memory s = SendAndReceiveERC1155TLRaffle.Settings({
+            canceled: false,
+            outputContractAddress: address(nft),
+            outputTokenId: 4,
+            inputContractAddress: bsy,
+            inputTokenId: 1,
+            inputAmount: 1,
+            inputTokenSink: sink,
+            openAt: uint64(0),
+            duration: uint64(48 hours),
+            numWinners: uint64(1),
+            numEntries: uint64(0)
+        });
+        SendAndReceiveERC1155TLRaffle snr2 = new SendAndReceiveERC1155TLRaffle(false);
+        vm.expectRevert(SendAndReceiveERC1155TLRaffle.AddressZeroCodeLength.selector);
         snr2.initialize(address(this), s, seedHash);
     }
 
@@ -154,6 +175,25 @@ contract SendAndReceiveERC1155TLRaffleTest is Test {
         });
         SendAndReceiveERC1155TLRaffle snr2 = new SendAndReceiveERC1155TLRaffle(false);
         vm.expectRevert(SendAndReceiveERC1155TLRaffle.ZeroAddressSink.selector);
+        snr2.initialize(address(this), s, seedHash);
+    }
+
+    function test_initialize_zeroOutputCode() public {
+        SendAndReceiveERC1155TLRaffle.Settings memory s = SendAndReceiveERC1155TLRaffle.Settings({
+            canceled: false,
+            outputContractAddress: bsy,
+            outputTokenId: 4,
+            inputContractAddress: address(nft),
+            inputTokenId: 1,
+            inputAmount: 1,
+            inputTokenSink: sink,
+            openAt: uint64(0),
+            duration: uint64(48 hours),
+            numWinners: uint64(1),
+            numEntries: uint64(0)
+        });
+        SendAndReceiveERC1155TLRaffle snr2 = new SendAndReceiveERC1155TLRaffle(false);
+        vm.expectRevert(SendAndReceiveERC1155TLRaffle.AddressZeroCodeLength.selector);
         snr2.initialize(address(this), s, seedHash);
     }
 
@@ -204,12 +244,8 @@ contract SendAndReceiveERC1155TLRaffleTest is Test {
     }
 
     function test_updateSettings() public {
-        // test revert
-        vm.expectRevert(SendAndReceiveERC1155TLRaffle.ZeroAddressSink.selector);
-        snr.updateSettings(uint64(block.timestamp + 1), uint64(24 hours), address(0));
-
         // test success
-        snr.updateSettings(uint64(block.timestamp + 2), uint64(24 hours), bsy);
+        snr.updateSettings(uint64(openTime + 2), uint64(24 hours), bsy);
         (
             bool canceled,
             address outputContractAddress,
@@ -230,28 +266,36 @@ contract SendAndReceiveERC1155TLRaffleTest is Test {
         assertEq(inputTokenId, 1);
         assertEq(inputAmount, 1);
         assertEq(inputTokenSink, bsy);
-        assertEq(openAt, uint64(block.timestamp + 2));
+        assertEq(openAt, uint64(openTime + 2));
         assertEq(duration, uint64(24 hours));
         assertEq(numWinners, 1);
         assertEq(numEntries, 0);
+
+        // test revert
+        vm.expectRevert(SendAndReceiveERC1155TLRaffle.ZeroAddressSink.selector);
+        snr.updateSettings(uint64(openTime), uint64(24 hours), address(0));
+
+        vm.warp(openTime + 2);
+
+        vm.expectRevert(SendAndReceiveERC1155TLRaffle.CannotChangeOpenTimeOnceStarted.selector);
+        snr.updateSettings(uint64(0), uint64(24 hours), sink);
+
+        vm.expectRevert(SendAndReceiveERC1155TLRaffle.CannotChangeDurationOnceStarted.selector);
+        snr.updateSettings(uint64(openTime + 2), uint64(12 hours), sink);
+
+        vm.expectRevert(SendAndReceiveERC1155TLRaffle.ZeroAddressSink.selector);
+        snr.updateSettings(uint64(openTime + 2), uint64(24 hours), address(0));
     }
 
     function test_entry_errors() public {
         // not open
-        snr.updateSettings(uint64(block.timestamp + 1 days), uint64(48 hours), sink);
         vm.prank(bsy);
         vm.expectRevert(SendAndReceiveERC1155TLRaffle.NotOpen.selector);
         nft.safeTransferFrom(bsy, address(snr), 1, 1, "");
 
-        // window passed
-        snr.updateSettings(uint64(1), uint64(2), sink);
-        vm.warp(10);
-        vm.prank(bsy);
-        vm.expectRevert(SendAndReceiveERC1155TLRaffle.NotOpen.selector);
-        nft.safeTransferFrom(bsy, address(snr), 1, 1, "");
+        vm.warp(openTime);
 
         // invalid input token
-        snr.updateSettings(uint64(block.timestamp), uint64(2 days), sink);
         vm.prank(bsy);
         vm.expectRevert(SendAndReceiveERC1155TLRaffle.InvalidInputToken.selector);
         nft.safeTransferFrom(bsy, address(snr), 3, 1, "");
@@ -272,6 +316,46 @@ contract SendAndReceiveERC1155TLRaffleTest is Test {
         vm.prank(bsy);
         vm.expectRevert(SendAndReceiveERC1155TLRaffle.AlreadyEntered.selector);
         nft.safeTransferFrom(bsy, address(snr), 1, 1, "");
+
+        // window passed
+        vm.warp(openTime + 48 hours + 1);
+        vm.prank(bsy);
+        vm.expectRevert(SendAndReceiveERC1155TLRaffle.NotOpen.selector);
+        nft.safeTransferFrom(bsy, address(snr), 1, 1, "");
+    }
+
+    function test_reveal_then_enter() public {
+        vm.warp(openTime);
+        vm.prank(bsy);
+        nft.safeTransferFrom(bsy, address(snr), 1, 1, "");
+        vm.prank(bob);
+        nft.safeTransferFrom(bob, address(snr), 1, 1, "");
+        vm.prank(ace);
+        nft.safeTransferFrom(ace, address(snr), 1, 1, "");
+
+        vm.warp(openTime + 48 hours + 1);
+        snr.reveal(seed, salt);
+        
+        vm.prank(bsy);
+        vm.expectRevert(SendAndReceiveERC1155TLRaffle.SeedAlreadyRevealed.selector);
+        nft.safeTransferFrom(bsy, address(snr), 1, 1, "");
+    }
+
+    function test_cancel_then_enter() public {
+        vm.warp(openTime);
+        vm.prank(bsy);
+        nft.safeTransferFrom(bsy, address(snr), 1, 1, "");
+        vm.prank(bob);
+        nft.safeTransferFrom(bob, address(snr), 1, 1, "");
+        vm.prank(ace);
+        nft.safeTransferFrom(ace, address(snr), 1, 1, "");
+
+        vm.warp(openTime + 48 hours + 48 hours + 1);
+        snr.cancel();
+        
+        vm.prank(bsy);
+        vm.expectRevert(SendAndReceiveERC1155TLRaffle.Canceled.selector);
+        nft.safeTransferFrom(bsy, address(snr), 1, 1, "");
     }
 
     function test_batch_enter_reverts_on_second_entry() public {
@@ -281,6 +365,8 @@ contract SendAndReceiveERC1155TLRaffleTest is Test {
         uint256[] memory values = new uint256[](2);
         values[0] = 1;
         values[1] = 1;
+
+        vm.warp(openTime);
 
         vm.prank(bsy);
         vm.expectRevert(SendAndReceiveERC1155TLRaffle.AlreadyEntered.selector);
@@ -293,6 +379,8 @@ contract SendAndReceiveERC1155TLRaffleTest is Test {
         uint256[] memory values = new uint256[](1);
         values[0] = 1;
 
+        vm.warp(openTime);
+
         vm.prank(bsy);
         vm.expectEmit(true, true, false, false, address(snr));
         emit SendAndReceiveERC1155TLRaffle.Entered(bsy, 0);
@@ -300,7 +388,7 @@ contract SendAndReceiveERC1155TLRaffleTest is Test {
     }
 
     function test_reveal_errors() public {
-        vm.warp(block.timestamp + 100 hours);
+        vm.warp(openTime + 100 hours);
 
         vm.expectRevert(SendAndReceiveERC1155TLRaffle.InvalidSeed.selector);
         snr.reveal(seed, "hiii");
@@ -393,7 +481,7 @@ contract SendAndReceiveERC1155TLRaffleTest is Test {
         // warp to end of reveal time and try to cancel
         vm.warp(block.timestamp + 48 hours + 72 hours);
         vm.expectRevert(SendAndReceiveERC1155TLRaffle.SeedAlreadyRevealed.selector);
-        snr.cancelRaffle();
+        snr.cancel();
 
         // try claiming not entered
         vm.expectRevert(SendAndReceiveERC1155TLRaffle.NotEntered.selector);
@@ -489,12 +577,6 @@ contract SendAndReceiveERC1155TLRaffleTest is Test {
         // warp to end
         vm.warp(block.timestamp + 49 hours);
 
-        // try bsy enter
-        vm.prank(bsy);
-        vm.expectRevert(SendAndReceiveERC1155TLRaffle.NotOpen.selector);
-        nft.safeTransferFrom(bsy, address(snr), 1, inputAmount, "");
-        assertFalse(snr.isWinner(bsy));
-
         // reveal seed
         (uint256 A, uint256 B) = numEntries > 1 ? AffinePermutation.pickAB(uint256(numEntries), seed) : (0, 0);
         vm.expectEmit(true, true, true, false, address(snr));
@@ -513,7 +595,7 @@ contract SendAndReceiveERC1155TLRaffleTest is Test {
         // warp to end of reveal time and try to cancel
         vm.warp(block.timestamp + 48 hours + 72 hours);
         vm.expectRevert(SendAndReceiveERC1155TLRaffle.SeedAlreadyRevealed.selector);
-        snr.cancelRaffle();
+        snr.cancel();
 
         // try claiming not entered
         vm.expectRevert(SendAndReceiveERC1155TLRaffle.NotEntered.selector);
@@ -610,7 +692,7 @@ contract SendAndReceiveERC1155TLRaffleTest is Test {
 
         // try to cancel
         vm.expectRevert(SendAndReceiveERC1155TLRaffle.CannotCancel.selector);
-        snr.cancelRaffle();
+        snr.cancel();
 
         // warp to end
         vm.warp(block.timestamp + 49 hours);
@@ -625,7 +707,7 @@ contract SendAndReceiveERC1155TLRaffleTest is Test {
         vm.warp(block.timestamp + 48 hours + 72 hours);
         vm.expectEmit(address(snr));
         emit SendAndReceiveERC1155TLRaffle.RaffleCanceled();
-        snr.cancelRaffle();
+        snr.cancel();
 
         // try revealing
         vm.expectRevert(SendAndReceiveERC1155TLRaffle.Canceled.selector);

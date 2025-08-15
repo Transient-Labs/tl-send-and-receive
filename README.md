@@ -13,6 +13,39 @@ The system is meant to be quite simple. It takes in ERC-1155 tokens, confirms th
 ### Attack Vectors
 ![Attack Vectors](./public/AttackVectors.png)
 
+### Trust Assumptions
+The contracts are built to minimize trust, however, there is some level of trust associated with each contract. The trust is meant to be minimized to lower risk and what the owner cannot change the goalposts once the rules of engagement are set.
+
+Some notes...
+
+`SendAndReceiveERC1155TL`: The owner must ensure that the contract stays approved to mint new ERC155TL tokens and that they do not call the emergency close function.
+
+`SendAndReceiveERC721`: The owner must ensure they keep ownership and approval of the ERC-721 token and that they do not call the emergency close function.
+
+`SendAndReceiveERC1155TLRaffle`: The users trust that the owner will not abandon the raffle if they don't like the results. If the owner does not reveal within 48 hours of entry end, the users can cancel the raffle at least and tokens are not locked.
+
+`SendAndReceiveCurrency`: The users must trust that the owner will open the redemption if they are contributing currency to the contract.
+
+## Test Coverage
+```
+╭---------------------------------------+-------------------+-------------------+-----------------+-----------------╮
+| File                                  | % Lines           | % Statements      | % Branches      | % Funcs         |
++===================================================================================================================+
+| src/SendAndReceiveCurrency.sol        | 100.00% (60/60)   | 100.00% (76/76)   | 100.00% (19/19) | 100.00% (9/9)   |
+|---------------------------------------+-------------------+-------------------+-----------------+-----------------|
+| src/SendAndReceiveERC1155TL.sol       | 100.00% (68/68)   | 100.00% (84/84)   | 100.00% (16/16) | 100.00% (10/10) |
+|---------------------------------------+-------------------+-------------------+-----------------+-----------------|
+| src/SendAndReceiveERC1155TLRaffle.sol | 100.00% (117/117) | 100.00% (141/141) | 100.00% (28/28) | 100.00% (13/13) |
+|---------------------------------------+-------------------+-------------------+-----------------+-----------------|
+| src/SendAndReceiveERC721.sol          | 100.00% (63/63)   | 100.00% (74/74)   | 100.00% (16/16) | 100.00% (10/10) |
+|---------------------------------------+-------------------+-------------------+-----------------+-----------------|
+| src/lib/AffinePermutation.sol         | 100.00% (19/19)   | 100.00% (29/29)   | 100.00% (4/4)   | 100.00% (4/4)   |
+|---------------------------------------+-------------------+-------------------+-----------------+-----------------|
+| src/lib/SendAndReceiveBase.sol        | 100.00% (31/31)   | 100.00% (35/35)   | 100.00% (8/8)   | 100.00% (6/6)   |
+|---------------------------------------+-------------------+-------------------+-----------------+-----------------|
+| Total                                 | 100.00% (358/358) | 100.00% (439/439) | 100.00% (91/91) | 100.00% (52/52) |
+╰---------------------------------------+-------------------+-------------------+-----------------+-----------------╯
+```
 
 ## Getting Started
 1. Install [Foundry](https://book.getfoundry.sh/getting-started/installation)
