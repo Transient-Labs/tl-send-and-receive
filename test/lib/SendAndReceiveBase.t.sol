@@ -5,7 +5,7 @@ import "forge-std-1.9.7/Test.sol";
 import {MockSendAndReceive, SendAndReceiveBase} from "../mocks/MockSendAndReceive.sol";
 import {MockERC20} from "../mocks/MockERC20.sol";
 import {MockERC721} from "../mocks/MockERC721.sol";
-import {ERC1155TL} from "tl-creator-contracts-3.7.0/erc-1155/ERC1155TL.sol";
+import {ERC1155TL} from "tl-creator-contracts-3.7.1/erc-1155/ERC1155TL.sol";
 import {OwnableUpgradeable} from "@openzeppelin-contracts-upgradeable-5.0.2/access/OwnableUpgradeable.sol";
 
 contract SendAndReceiveBaseTest is Test {

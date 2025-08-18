@@ -2,7 +2,7 @@
 pragma solidity 0.8.28;
 
 import {IERC1155} from "@openzeppelin-contracts-5.0.2/token/ERC1155/IERC1155.sol";
-import {IERC1155TL} from "tl-creator-contracts-3.7.0/erc-1155/IERC1155TL.sol";
+import {IERC1155TL} from "tl-creator-contracts-3.7.1/erc-1155/IERC1155TL.sol";
 import {SendAndReceiveBase, IERC1155Receiver} from "./lib/SendAndReceiveBase.sol";
 import {AffinePermutation} from "./lib/AffinePermutation.sol";
 

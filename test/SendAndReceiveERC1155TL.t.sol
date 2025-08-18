@@ -7,7 +7,7 @@ import {SendAndReceiveBase} from "src/lib/SendAndReceiveBase.sol";
 import {
     OwnableUpgradeable, Initializable
 } from "@openzeppelin-contracts-upgradeable-5.0.2/access/OwnableUpgradeable.sol";
-import {ERC1155TL} from "tl-creator-contracts-3.7.0/erc-1155/ERC1155TL.sol";
+import {ERC1155TL} from "tl-creator-contracts-3.7.1/erc-1155/ERC1155TL.sol";
 
 contract SendAndReceiveERC1155TLTest is Test {
     SendAndReceiveERC1155TL public snr;
