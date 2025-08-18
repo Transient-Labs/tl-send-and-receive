@@ -263,7 +263,7 @@ contract SendAndReceiveERC1155TLTest is Test {
             ,
             uint64 openAt,
             uint64 duration,
-            uint64 maxRedemptions,
+            ,
         ) = snr.settings();
 
         // not open
@@ -388,7 +388,7 @@ contract SendAndReceiveERC1155TLTest is Test {
             ,
             uint64 openAt,
             uint64 duration,
-            uint64 maxRedemptions,
+            ,
         ) = snr.settings();
 
         // not open
@@ -504,5 +504,45 @@ contract SendAndReceiveERC1155TLTest is Test {
         vm.prank(bsy);
         vm.expectRevert(SendAndReceiveERC1155TL.Closed.selector);
         nft.safeBatchTransferFrom(bsy, address(snr), ids, values, "");
+    }
+
+    function test_locked_ERC1155TL() public {
+        // locked tokens on ERC1155TL only applies to minting new supply and doesn't impact transfers
+        // this just verifies that functionality in addition to the tests in the creator contracts repo
+        nft.lockToken(1);
+        nft.lockToken(2);
+
+        vm.warp(block.timestamp + 1 days);
+
+        address[] memory addresses = new address[](1);
+        addresses[0] = bsy;
+        uint256[] memory amts = new uint256[](1);
+        amts[0] = 1;
+
+        vm.expectRevert();
+        nft.mintToken(1, addresses, amts);
+
+        vm.prank(bsy);
+        vm.expectEmit(true, true, false, false, address(snr));
+        emit SendAndReceiveBase.Redeemed(bsy, 1);
+        nft.safeTransferFrom(bsy, address(snr), 1, 1, "");
+
+        uint256[] memory ids = new uint256[](2);
+        ids[0] = 1;
+        ids[1] = 2;
+        uint256[] memory values = new uint256[](2);
+        values[0] = 1;
+        values[1] = 2;
+
+        vm.prank(bsy);
+        vm.expectEmit(true, true, false, false, address(snr));
+        emit SendAndReceiveBase.Redeemed(bsy, 2);
+        nft.safeBatchTransferFrom(bsy, address(snr), ids, values, "");
+
+        // expect mint failure if locked
+        nft.lockToken(4);
+        vm.prank(bsy);
+        vm.expectRevert(ERC1155TL.TokenLocked.selector);
+        nft.safeTransferFrom(bsy, address(snr), 1, 1, "");
     }
 }
