@@ -20,7 +20,7 @@ contract SendAndReceiveCurrency is SendAndReceiveBase {
 
     struct Settings {
         bool open;
-        bool closed;
+        bool finalized;
         address inputContractAddress;
         uint256 inputTokenId;
         uint64 inputAmount;
@@ -58,11 +58,11 @@ contract SendAndReceiveCurrency is SendAndReceiveBase {
     error EthDepositsClosed();
     error EthDepositNotAllowed();
     error NotOpen();
-    error Closed();
+    error Finalized();
     error InvalidInputToken();
     error InvalidAmountSent();
     error NoSupplyLeft();
-    error CannotClose();
+    error CannotFinalize();
     error RedemptionOpen();
     
 
@@ -126,7 +126,7 @@ contract SendAndReceiveCurrency is SendAndReceiveBase {
 
         // make sure redemption is open
         if (!s.open) revert NotOpen();
-        if (s.closed) revert Closed();
+        if (s.finalized) revert Finalized();
 
         // make sure it's a valid token sent
         if (inputContractAddress != s.inputContractAddress || inputTokenId != s.inputTokenId) {
@@ -175,7 +175,7 @@ contract SendAndReceiveCurrency is SendAndReceiveBase {
     /// @dev Anyone can call the function as a way to crowdsource funds
     /// @dev For ERC-20 deposits, there is no function needed and anyone can send funds to this address
     /// @dev Cannot be sent after the redemption is open
-    /// @dev If ETH or ERC-20s are send after the redemption is open, those funds are locked until the redemption is done
+    /// @dev If ETH or ERC-20s are sent after the redemption is open, those funds are locked until the redemption is done
     function depositEth() external payable nonReentrant {
         // cache settings
         Settings storage s = settings;
@@ -203,7 +203,7 @@ contract SendAndReceiveCurrency is SendAndReceiveBase {
         Settings storage s = settings;
 
         // if closed, revert
-        if (s.closed) revert Closed();
+        if (s.finalized) revert Finalized();
 
         // if open, revert
         if (s.open) revert AlreadyConfigured();
@@ -224,22 +224,22 @@ contract SendAndReceiveCurrency is SendAndReceiveBase {
         s.valuePerRedemption = valuePerRedemption;
     }
 
-    /// @notice Function to close the redemption
+    /// @notice Function to finalize the redemption
     /// @dev Requires owner to call the function
     /// @dev This can happen only *after* the minimumDuration has passed, but the owner can set this to a very large value if desired
     /// @dev This is built to be transparent to users but allows for some economic risk mitigation
-    function close() external onlyOwner {
+    function finalize() external onlyOwner {
         // cache settings
         Settings storage s = settings;
 
         // make sure can close
         if (!s.open) revert NotOpen();
-        if (block.timestamp < uint256(s.openAt) + uint256(s.duration)) revert CannotClose();
+        if (block.timestamp < uint256(s.openAt) + uint256(s.duration)) revert CannotFinalize();
 
         // save settings
-        s.closed = true;
+        s.finalized = true;
 
-        emit RedemptionClosed();
+        emit RedemptionClosed(); // reuse event from the base contract even though it uses the "closed" verbiage
     }
 
     /// @notice Function to withdraw currency
@@ -255,8 +255,8 @@ contract SendAndReceiveCurrency is SendAndReceiveBase {
         // cache settings
         Settings storage s = settings;
 
-        // revert if it's the configured currency address, redemption open, and not ended
-        if (currencyAddress == s.currencyAddress && s.open && !s.closed && s.numRedeemed < s.maxRedemptions) revert RedemptionOpen();
+        // revert if it's the configured currency address, and redemption not finalized
+        if (currencyAddress == s.currencyAddress && !s.finalized && s.numRedeemed < s.maxRedemptions) revert RedemptionOpen();
 
         // send currency to recipient
         _sendCurrency(currencyAddress, recipient, value);

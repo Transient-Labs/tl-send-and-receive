@@ -13,7 +13,7 @@ import {SendAndReceiveBase, IERC1155Receiver} from "./lib/SendAndReceiveBase.sol
 ///      For each token sent out, you can configure which token and what amount of that token is required.
 ///      Example: token A can be redeemed by sending 2 of token B *or* 5 of token C.
 ///      It is not possible to combine different input tokens with this contract. This is a design choice to enhance simplicity.
-///      Additionally, it is possible to cnfigure when the redemption opens, how long it lasts, and what supply there is of the redepmption token.
+///      Additionally, it is possible to configure when the redemption opens, how long it lasts, and what supply there is of the redemption token.
 contract SendAndReceiveERC1155TL is SendAndReceiveBase {
     ////////////////////////////////////////////////////////////////////////////
     // Types
@@ -219,9 +219,11 @@ contract SendAndReceiveERC1155TL is SendAndReceiveBase {
         Settings storage s = settings;
 
         // checks
-        if (block.timestamp >= s.openAt && openAt != s.openAt) revert CannotChangeOpenTimeOnceStarted();
-        if (block.timestamp >= s.openAt && duration != s.duration) revert CannotChangeDurationOnceStarted();
-        if (block.timestamp >= s.openAt && maxRedemptions != s.maxRedemptions) revert CannotChangeMaxRedemptionsOnceStarted();
+        if (block.timestamp >= uint256(s.openAt)) {
+            if (openAt != s.openAt) revert CannotChangeOpenTimeOnceStarted();
+            if (duration != s.duration) revert CannotChangeDurationOnceStarted();
+            if (maxRedemptions != s.maxRedemptions) revert CannotChangeMaxRedemptionsOnceStarted();
+        }
         if (inputTokenSink == address(0)) revert ZeroAddressSink();
 
         // adjust settings

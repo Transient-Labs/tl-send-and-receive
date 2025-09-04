@@ -34,7 +34,7 @@ contract SendAndReceiveCurrencyTest is Test {
     function _setup_snrEth() internal {
         SendAndReceiveCurrency.Settings memory initSettings = SendAndReceiveCurrency.Settings({
             open: false,
-            closed: true, // test :)
+            finalized: true, // test :)
             inputContractAddress: address(nft),
             inputTokenId: 1,
             inputAmount: uint64(1),
@@ -50,7 +50,7 @@ contract SendAndReceiveCurrencyTest is Test {
         assertEq(snrEth.owner(), address(this));
         (
             bool open,
-            bool closed,
+            bool finalized,
             address inputContractAddress,
             uint256 inputTokenId,
             uint64 inputAmount,
@@ -62,7 +62,7 @@ contract SendAndReceiveCurrencyTest is Test {
             uint64 duration
         ) = snrEth.settings();
         assertFalse(open);
-        assertFalse(closed);
+        assertFalse(finalized);
         assertEq(inputContractAddress, initSettings.inputContractAddress);
         assertEq(inputTokenId, initSettings.inputTokenId);
         assertEq(inputAmount, initSettings.inputAmount);
@@ -77,7 +77,7 @@ contract SendAndReceiveCurrencyTest is Test {
     function _setup_snrCoin() internal {
         SendAndReceiveCurrency.Settings memory initSettings = SendAndReceiveCurrency.Settings({
             open: true, // test :)
-            closed: false,
+            finalized: false,
             inputContractAddress: address(nft),
             inputTokenId: 2,
             inputAmount: uint64(2),
@@ -93,7 +93,7 @@ contract SendAndReceiveCurrencyTest is Test {
         assertEq(snrCoin.owner(), address(this));
         (
             bool open,
-            bool closed,
+            bool finalized,
             address inputContractAddress,
             uint256 inputTokenId,
             uint64 inputAmount,
@@ -105,7 +105,7 @@ contract SendAndReceiveCurrencyTest is Test {
             uint64 duration
         ) = snrCoin.settings();
         assertFalse(open);
-        assertFalse(closed);
+        assertFalse(finalized);
         assertEq(inputContractAddress, initSettings.inputContractAddress);
         assertEq(inputTokenId, initSettings.inputTokenId);
         assertEq(inputAmount, initSettings.inputAmount);
@@ -146,7 +146,7 @@ contract SendAndReceiveCurrencyTest is Test {
     function test_initialize_initializersDisabled() public {
         SendAndReceiveCurrency.Settings memory s = SendAndReceiveCurrency.Settings({
             open: false,
-            closed: false,
+            finalized: false,
             inputContractAddress: address(nft),
             inputTokenId: 1,
             inputAmount: uint64(1),
@@ -165,7 +165,7 @@ contract SendAndReceiveCurrencyTest is Test {
     function test_initialize_errors() public {
         SendAndReceiveCurrency.Settings memory s = SendAndReceiveCurrency.Settings({
             open: false,
-            closed: false,
+            finalized: false,
             inputContractAddress: address(nft),
             inputTokenId: 1,
             inputAmount: uint64(0),
@@ -216,7 +216,7 @@ contract SendAndReceiveCurrencyTest is Test {
 
         vm.prank(hacker);
         vm.expectRevert(abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, hacker));
-        snrEth.close();
+        snrEth.finalize();
 
         vm.prank(hacker);
         vm.expectRevert(abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, hacker));
@@ -266,12 +266,14 @@ contract SendAndReceiveCurrencyTest is Test {
         // deposit ETH and withdraw prior to open
         snrEth.depositEth{value: amt}();
         assertEq(address(snrEth).balance, amt);
+        vm.expectRevert(SendAndReceiveCurrency.RedemptionOpen.selector);
         snrEth.withdrawCurrency(address(0), address(this), amt);
-        assertEq(address(snrEth).balance, 0);
+
+        vm.deal(address(this), amt);
 
         // deposit ETH, open, and try to withdraw
         snrEth.depositEth{value: amt}();
-        assertEq(address(snrEth).balance, amt);
+        assertEq(address(snrEth).balance, amt * 2);
         snrEth.open();
         vm.expectRevert(SendAndReceiveCurrency.RedemptionOpen.selector);
         snrEth.withdrawCurrency(address(0), address(this), amt);
@@ -285,12 +287,12 @@ contract SendAndReceiveCurrencyTest is Test {
         // deposit ERC-20 and withdraw prior to open
         coin.transfer(address(snrCoin), amt);
         assertEq(coin.balanceOf(address(snrCoin)), amt);
+        vm.expectRevert(SendAndReceiveCurrency.RedemptionOpen.selector);
         snrCoin.withdrawCurrency(address(coin), address(this), amt);
-        assertEq(coin.balanceOf(address(snrCoin)), 0);
 
         // deposit ERC-20, open, and try to withdraw
         coin.transfer(address(snrCoin), amt);
-        assertEq(coin.balanceOf(address(snrCoin)), amt);
+        assertEq(coin.balanceOf(address(snrCoin)), amt * 2);
         snrCoin.open();
         vm.expectRevert(SendAndReceiveCurrency.RedemptionOpen.selector);
         snrCoin.withdrawCurrency(address(coin), address(this), amt);
@@ -334,11 +336,11 @@ contract SendAndReceiveCurrencyTest is Test {
         vm.expectRevert(SendAndReceiveCurrency.InvalidAmountSent.selector);
         nft.safeTransferFrom(bsy, address(snrEth), 1, 2, "");
 
-        // close
+        // finalize
         vm.warp(block.timestamp + 366 days);
-        snrEth.close();
+        snrEth.finalize();
         vm.prank(bsy);
-        vm.expectRevert(SendAndReceiveCurrency.Closed.selector);
+        vm.expectRevert(SendAndReceiveCurrency.Finalized.selector);
         nft.safeTransferFrom(bsy, address(snrEth), 1, 1, "");
     }
 
@@ -373,11 +375,11 @@ contract SendAndReceiveCurrencyTest is Test {
         vm.expectRevert(SendAndReceiveCurrency.InvalidAmountSent.selector);
         nft.safeTransferFrom(bsy, address(snrCoin), 2, 1, "");
 
-        // close
+        // finalize
         vm.warp(block.timestamp + 4 days);
-        snrCoin.close();
+        snrCoin.finalize();
         vm.prank(bsy);
-        vm.expectRevert(SendAndReceiveCurrency.Closed.selector);
+        vm.expectRevert(SendAndReceiveCurrency.Finalized.selector);
         nft.safeTransferFrom(bsy, address(snrCoin), 2, 2, "");
     }
 
@@ -609,12 +611,12 @@ contract SendAndReceiveCurrencyTest is Test {
         vm.expectRevert(SendAndReceiveCurrency.InvalidAmountSent.selector);
         nft.safeBatchTransferFrom(bsy, address(snrEth), ids, values, "");
 
-        // close
+        // finalize
         values[1] = 1;
         vm.warp(block.timestamp + 366 days);
-        snrEth.close();
+        snrEth.finalize();
         vm.prank(bsy);
-        vm.expectRevert(SendAndReceiveCurrency.Closed.selector);
+        vm.expectRevert(SendAndReceiveCurrency.Finalized.selector);
         nft.safeBatchTransferFrom(bsy, address(snrEth), ids, values, "");
     }
 
@@ -671,12 +673,12 @@ contract SendAndReceiveCurrencyTest is Test {
         vm.expectRevert(SendAndReceiveCurrency.InvalidAmountSent.selector);
         nft.safeBatchTransferFrom(bsy, address(snrCoin), ids, values, "");
 
-        // close
+        // finalize
         values[1] = 2;
         vm.warp(block.timestamp + 4 days);
-        snrCoin.close();
+        snrCoin.finalize();
         vm.prank(bsy);
-        vm.expectRevert(SendAndReceiveCurrency.Closed.selector);
+        vm.expectRevert(SendAndReceiveCurrency.Finalized.selector);
         nft.safeBatchTransferFrom(bsy, address(snrCoin), ids, values, "");
     }
 
@@ -899,9 +901,9 @@ contract SendAndReceiveCurrencyTest is Test {
         vm.deal(address(this), 1 ether);
         snrEth.depositEth{value: 1 ether}();
 
-        // try to close before open
+        // try to finalize before open
         vm.expectRevert(SendAndReceiveCurrency.NotOpen.selector);
-        snrEth.close();
+        snrEth.finalize();
 
         // open
         snrEth.open();
@@ -914,21 +916,21 @@ contract SendAndReceiveCurrencyTest is Test {
         vm.prank(ace);
         nft.safeTransferFrom(ace, address(snrEth), 1, 1, "");
 
-        // try to close before time is up
-        vm.expectRevert(SendAndReceiveCurrency.CannotClose.selector);
-        snrEth.close();
+        // try to finalize before time is up
+        vm.expectRevert(SendAndReceiveCurrency.CannotFinalize.selector);
+        snrEth.finalize();
 
-        // close
+        // finalize
         vm.warp(block.timestamp + 366 days);
-        snrEth.close();
+        snrEth.finalize();
 
         // try to redeem
         vm.prank(bsy);
-        vm.expectRevert(SendAndReceiveCurrency.Closed.selector);
+        vm.expectRevert(SendAndReceiveCurrency.Finalized.selector);
         nft.safeTransferFrom(bsy, address(snrEth), 1, 1, "");
 
         // try to open again
-        vm.expectRevert(SendAndReceiveCurrency.Closed.selector);
+        vm.expectRevert(SendAndReceiveCurrency.Finalized.selector);
         snrEth.open();
 
         // withdraw currency
@@ -942,9 +944,9 @@ contract SendAndReceiveCurrencyTest is Test {
         // deposit coin
         coin.transfer(address(snrCoin), 1 ether);
 
-        // try to close before open
+        // try to finalize before open
         vm.expectRevert(SendAndReceiveCurrency.NotOpen.selector);
-        snrCoin.close();
+        snrCoin.finalize();
 
         // open
         snrCoin.open();
@@ -957,21 +959,21 @@ contract SendAndReceiveCurrencyTest is Test {
         vm.prank(ace);
         nft.safeTransferFrom(ace, address(snrCoin), 2, 2, "");
 
-        // try to close before time is up
-        vm.expectRevert(SendAndReceiveCurrency.CannotClose.selector);
-        snrCoin.close();
+        // try to finalie before time is up
+        vm.expectRevert(SendAndReceiveCurrency.CannotFinalize.selector);
+        snrCoin.finalize();
 
-        // close
+        // finalize
         vm.warp(block.timestamp + 4 days);
-        snrCoin.close();
+        snrCoin.finalize();
 
         // try to redeem
         vm.prank(bsy);
-        vm.expectRevert(SendAndReceiveCurrency.Closed.selector);
+        vm.expectRevert(SendAndReceiveCurrency.Finalized.selector);
         nft.safeTransferFrom(bsy, address(snrCoin), 2, 2, "");
 
         // try to open again
-        vm.expectRevert(SendAndReceiveCurrency.Closed.selector);
+        vm.expectRevert(SendAndReceiveCurrency.Finalized.selector);
         snrCoin.open();
 
         // withdraw currency

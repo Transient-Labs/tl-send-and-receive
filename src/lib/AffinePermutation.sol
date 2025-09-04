@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-/// @title Affine Permuation Library
+/// @title Affine Permutation Library
 /// @notice Library to compute Affine Permutations, making raffle choices O(1) based on a constant seed and N > 1
 /// @dev Permutations are like shuffling a deck of cards and is cheaper than drawing cards from the metaphorical deck.
 ///      The Affine Permutation is O(1) in difficulty and is perfectly reproducible. It can be used to get exactly K winners for raffle applications.

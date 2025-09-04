@@ -11,7 +11,8 @@ import {SendAndReceiveBase, IERC1155Receiver} from "./lib/SendAndReceiveBase.sol
 /// @custom:version 2.0.0
 /// @dev The contract is written to only be configured for a single ERC-721 redemption.
 ///      Multiple input token configurations are possible to allow for *or* conditions.
-///      ERC721 is not escrowed but needs to have this contract approved as an operator for `safeTransferFrom`.
+///      The ERC-721 token is escrowed when the contract is initialized.
+///      This contract is meant to be deployed with CREATE2 so that the address can be pre-approved to escrow the NFT.
 ///      It is not reccomended to use `setApprovalForAll` and rather use the specific `approve` function.
 ///      First person to send the editions needed wins.
 contract SendAndReceiveERC721 is SendAndReceiveBase {
@@ -109,6 +110,9 @@ contract SendAndReceiveERC721 is SendAndReceiveBase {
 
         // set input configs
         _configureInputs(inputConfigs);
+
+        // escrow the NFT
+        IERC721(initSettings.outputContractAddress).transferFrom(initSettings.tokenOwner, address(this), initSettings.outputTokenId);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -165,7 +169,7 @@ contract SendAndReceiveERC721 is SendAndReceiveBase {
         Settings storage s = settings;
 
         // interactions
-        IERC721(s.outputContractAddress).safeTransferFrom(s.tokenOwner, recipient, s.outputTokenId);
+        IERC721(s.outputContractAddress).safeTransferFrom(address(this), recipient, s.outputTokenId);
 
         // emit event
         emit Redeemed(recipient, 1);
@@ -204,23 +208,23 @@ contract SendAndReceiveERC721 is SendAndReceiveBase {
     /// @notice Function to update settings
     /// @dev Requires owner to call this function
     /// @dev This function limits what can be changed once open for redemptions
-    function updateSettings(uint64 openAt, uint64 duration, address inputTokenSink, address tokenOwner)
+    function updateSettings(uint64 openAt, uint64 duration, address inputTokenSink)
         external
         onlyOwner
     {
         Settings storage s = settings;
 
         // checks
-        if (block.timestamp >= s.openAt && openAt != s.openAt) revert CannotChangeOpenTimeOnceStarted();
-        if (block.timestamp >= s.openAt && duration != s.duration) revert CannotChangeDurationOnceStarted();
+        if (block.timestamp >= uint256(s.openAt)) {
+            if (openAt != s.openAt) revert CannotChangeOpenTimeOnceStarted();
+            if (duration != s.duration) revert CannotChangeDurationOnceStarted();
+        }
         if (inputTokenSink == address(0)) revert ZeroAddressSink();
-        if (tokenOwner == address(0)) revert ZeroAddressOwner();
 
         // adjust settings
         s.openAt = openAt;
         s.duration = duration;
         s.inputTokenSink = inputTokenSink;
-        s.tokenOwner = tokenOwner;
 
         emit SettingsUpdated();
     }
@@ -228,9 +232,12 @@ contract SendAndReceiveERC721 is SendAndReceiveBase {
     /// @notice Function to close the redemption
     /// @dev Requires owner to call this function
     /// @dev This is meant to be more of an emergency function
+    /// @dev This returns the NFT escrowed
     function close() external onlyOwner {
         Settings storage s = settings;
         s.closed = true;
+
+        IERC721(s.outputContractAddress).transferFrom(address(this), s.tokenOwner, s.outputTokenId);
 
         emit RedemptionClosed();
     }

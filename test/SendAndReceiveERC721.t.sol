@@ -58,6 +58,12 @@ contract SendAndReceiveERC721Test is Test {
         inputConfigs[0] = SendAndReceiveERC721.InputConfig({contractAddress: address(nft), tokenId: 1, amount: 1});
         inputConfigs[1] = SendAndReceiveERC721.InputConfig({contractAddress: address(nft), tokenId: 2, amount: 2});
         snr = new SendAndReceiveERC721(false);
+
+        // set token approval
+        vm.prank(cdb);
+        erc721.approve(address(snr), 1);
+
+        // initialize
         snr.initialize(address(this), initSettings, inputConfigs);
         assertEq(snr.owner(), address(this));
         (
@@ -83,9 +89,7 @@ contract SendAndReceiveERC721Test is Test {
         assertEq(snr.getInputAmount(address(nft), 2), 2, "token 2 mismatch");
         assertEq(snr.getInputAmount(address(nft), 3), 0, "token 3 mismatch");
 
-        // set token approval
-        vm.prank(cdb);
-        erc721.approve(address(snr), 1);
+        assertEq(erc721.ownerOf(1), address(snr));
     }
 
     function test_initialize_initializersDisabled() public {
@@ -168,7 +172,7 @@ contract SendAndReceiveERC721Test is Test {
 
         vm.prank(hacker);
         vm.expectRevert(abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, hacker));
-        snr.updateSettings(uint64(0), type(uint64).max, hacker, cdb);
+        snr.updateSettings(uint64(0), type(uint64).max, hacker);
 
         vm.prank(hacker);
         vm.expectRevert(abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, hacker));
@@ -198,35 +202,27 @@ contract SendAndReceiveERC721Test is Test {
     function test_updateSettings_changeOpenTimeOnceStarted() public {
         vm.warp(openTime);
         vm.expectRevert(SendAndReceiveERC721.CannotChangeOpenTimeOnceStarted.selector);
-        snr.updateSettings(uint64(openTime) - 1, uint64(2 days), sink, cdb);
+        snr.updateSettings(uint64(openTime) - 1, uint64(2 days), sink);
         vm.expectRevert(SendAndReceiveERC721.CannotChangeOpenTimeOnceStarted.selector);
-        snr.updateSettings(uint64(openTime) + 1, uint64(2 days), sink, cdb);
+        snr.updateSettings(uint64(openTime) + 1, uint64(2 days), sink);
     }
 
     function test_updateSettings_shortenDurationOnceStarted() public {
         vm.warp(openTime);
         vm.expectRevert(SendAndReceiveERC721.CannotChangeDurationOnceStarted.selector);
-        snr.updateSettings(uint64(openTime), uint64(1 hours), sink, cdb);
+        snr.updateSettings(uint64(openTime), uint64(1 hours), sink);
     }
 
     function test_updateSettings_zeroSink() public {
         vm.expectRevert(SendAndReceiveERC721.ZeroAddressSink.selector);
-        snr.updateSettings(uint64(openTime), uint64(1 days), address(0), cdb);
+        snr.updateSettings(uint64(openTime), uint64(1 days), address(0));
         vm.warp(openTime);
         vm.expectRevert(SendAndReceiveERC721.ZeroAddressSink.selector);
-        snr.updateSettings(uint64(openTime), uint64(2 days), address(0), cdb);
-    }
-
-    function test_updateSettings_zeroTokenOwner() public {
-        vm.expectRevert(SendAndReceiveERC721.ZeroAddressOwner.selector);
-        snr.updateSettings(uint64(openTime), uint64(1 days), sink, address(0));
-        vm.warp(openTime);
-        vm.expectRevert(SendAndReceiveERC721.ZeroAddressOwner.selector);
-        snr.updateSettings(uint64(openTime), uint64(2 days), sink, address(0));
+        snr.updateSettings(uint64(openTime), uint64(2 days), address(0));
     }
 
     function test_updateSettings_updatesFields() public {
-        snr.updateSettings(uint64(block.timestamp + 10), uint64(7 days), address(0xABCD), address(0xEFEF));
+        snr.updateSettings(uint64(block.timestamp + 10), uint64(7 days), address(0xABCD));
         (
             bool closed,
             address outputContractAddress,
@@ -243,7 +239,7 @@ contract SendAndReceiveERC721Test is Test {
         assertEq(outputTokenId, 1);
         assertEq(inputTokenSink, address(0xABCD));
         assertFalse(claimed);
-        assertEq(tokenOwner, address(0xEFEF));
+        assertEq(tokenOwner, cdb);
         assertEq(openAt, uint64(block.timestamp + 10));
         assertEq(duration, uint64(7 days));
     }
@@ -392,6 +388,9 @@ contract SendAndReceiveERC721Test is Test {
 
     function test_closed_errors() public {
         snr.close();
+
+        // make sure 1/1 is returned to og owner
+        assertEq(erc721.ownerOf(1), cdb);
 
         vm.prank(bsy);
         vm.expectRevert(SendAndReceiveERC721.Closed.selector);
