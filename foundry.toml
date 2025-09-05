@@ -1,8 +1,8 @@
 [profile.default]
-version = "1.0.0"
+version = "2.0.0"
 src = "src"
 out = "out"
-libs = ["dependencies", ".venv/lib/python3.13/site-packages"]
+libs = ["dependencies"]
 auto_detect_solc = true
 optimizer = true
 optimizer_runs = 10000
@@ -10,6 +10,7 @@ verbosity = 3
 wrap_comments = true
 gas_reports = ["SendAndReceiveERC1155TL", "SendAndReceiveERC1155TLRaffle", "SendAndReceiveERC721", "SendAndReceiveCurrency"]
 show_progess = true
+fs_permissions = [{ access = "read-write", path = "./.temp"}]
 
 [fuzz]
 runs = 1024

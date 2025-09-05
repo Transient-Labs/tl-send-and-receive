@@ -65,6 +65,9 @@ Some notes...
 2. Run `forge script script/Deploy.s.sol:Deploy --rpc-url mainnet --sender $SENDER --ledger --broadcast`
 3. Manually verify contract on etherscan through vyper json
 
+## Adding to TLUniversalDeployer
+Run `cast send --rpc-url <RPC> --ledger 0x7c24805454F7972d36BEE9D139BD93423AA29f3f "addDeployableContract(string,(string,address))" <CONTRACT NAME> "('<VERSION>',<ADDRESS>)"`
+
 ## Disclaimer
 This codebase is provided on an "as is" and "as available" basis.
 
