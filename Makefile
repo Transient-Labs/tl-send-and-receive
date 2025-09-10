@@ -89,7 +89,7 @@ deploy_SendAndReceiveERC1155TLRaffle_testnets: build
 
 deploy_SendAndReceiveERC1155TLRaffle_mainnets: build
 	forge script --ledger --sender ${SENDER} --broadcast --sig "run(string,bool)" script/Deploy.s.sol:Deploy "SendAndReceiveERC1155TLRaffle.sol:SendAndReceiveERC1155TLRaffle" false
-	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC1155TRaffleL.sol:SendAndReceiveERC1155TLRaffle --chain mainnet --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC1155TLRaffle.sol:SendAndReceiveERC1155TLRaffle --chain mainnet --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC1155TLRaffle.sol:SendAndReceiveERC1155TLRaffle --chain arbitrum --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC1155TLRaffle.sol:SendAndReceiveERC1155TLRaffle --chain base --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC1155TLRaffle.sol:SendAndReceiveERC1155TLRaffle --verifier blockscout --verifier-url https://shapescan.xyz/api  --watch --constructor-args ${CONSTRUCTOR_ARGS}

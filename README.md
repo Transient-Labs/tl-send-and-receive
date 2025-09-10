@@ -68,6 +68,30 @@ Some notes...
 ## Adding to TLUniversalDeployer
 Run `cast send --rpc-url <RPC> --ledger 0x7c24805454F7972d36BEE9D139BD93423AA29f3f "addDeployableContract(string,(string,address))" <CONTRACT NAME> "('<VERSION>',<ADDRESS>)"`
 
+## Generating Initialization Calldata for Deploying with CREATE2
+`SendAndReceiveERC1155TL`:
+```
+cast calldata "initialize(address, (bool,address,uint256,address,uint64,uint64,uint64,uint64), (address,uint256,uint256)[])" <OWNER ADDRESS> "(false, <OUPUT CONTRACT ADDRESS>, <OUTPUT TOKEN ID>, <TOKEN SINK ADDRESS>, <OPEN AT>, <DURATION>, <MAX REDEMPTIONS>, 0)" "[(<INPUT TOKEN ADDRESS>, <INPUT TOKEN ID>, <INPUT AMOUNT>)]" 
+```
+Don't forget to approve the deployed contract as a mint contract on the ERC1155TL contract.
+
+`SendAndReceiveERC1155TLRaffle`:
+```
+cast calldata "initialize(address, (bool,address,uint256,address,uint256,uint64,address,uint64,uint64,uint64,uint64), bytes32)" <OWNER ADDRESS> "(false, <OUPUT CONTRACT ADDRESS>, <OUTPUT TOKEN ID>, <INPUT CONTRACT ADDRESS>, <INPUT TOKEN ID>, <INPUT TOKEN AMOUNT>, <TOKEN SINK ADDRESS>, <OPEN AT>, <DURATION>, <NUM WINNERS>, 0)" <RANDOMNESS SEED HASH>
+```
+Hash the randomness seed with `cast keccak $(cast abi-encode "f(bytes32, string)" <BYTES32 SEED> "<SALT>")`
+Don't forget to approve the deployed contract as a mint contract on the ERC1155TL contract.
+
+`SendAndReceiveERC721`:
+```
+cast calldata "initialize(address, (bool,address,uint256,address,bool,address,uint64,uint64), (address,uint256,uint256)[])" <OWNER ADDRESS> "(false, <OUPUT CONTRACT ADDRESS>, <OUTPUT TOKEN ID>, <TOKEN SINK ADDRESS>, false, <721 TOKEN OWNER>, <OPEN AT>, <DURATION>)" "[(<INPUT TOKEN ADDRESS>, <INPUT TOKEN ID>, <INPUT AMOUNT>)]" 
+```
+
+`SendAndReceiveCurrency`:
+```
+cast calldata "initialize(address, (bool,bool,address,uint256,uint64,address,uint256,uint64,uint64,uint64,uint64))" <OWNER ADDRESS> "(false, false, <INPUT CONTRACT ADDRESS>, <INPUT TOKEN ID>, <INPUT TOKEN AMOUNT>, <CURRENCY ADDRESS>, 0, <MAX_REDEMPTIONS>, 0, 0, <DURATION>)"
+```
+
 ## Disclaimer
 This codebase is provided on an "as is" and "as available" basis.
 
