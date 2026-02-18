@@ -109,6 +109,6 @@ This codebase is provided on an "as is" and "as available" basis.
 We do not give any warranties and will not be liable for any loss incurred through any use of this codebase.
 
 ## License
-Copright (c) 2026 - Transient Labs, Inc.
+Copyright (c) 2026 - Transient Labs, Inc.
 
 Licensed under the MIT License. See the `LICENSE` file for more details.
