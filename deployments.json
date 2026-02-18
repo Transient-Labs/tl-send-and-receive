@@ -6,6 +6,13 @@
             "deployed_contract": "0xa3f462a89dbad5904d594b2c596f94ac38798188"
         }
     },
+    "SendAndReceiveERC721TL": {
+        "2.0.0": {
+            "constructor_args": "0x0000000000000000000000000000000000000000000000000000000000000001",
+            "salt": "0x0201000000000000000000000000000000000000000000000000000000000000",
+            "deployed_contract": "0xc1d12c1ea8bb9094d6e1fdb14a1cf2b8a2d9d138"
+        }
+    },
     "SendAndReceiveERC1155TLRaffle": {
         "2.0.0": {
             "constructor_args": "0x0000000000000000000000000000000000000000000000000000000000000001",
