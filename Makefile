@@ -42,19 +42,19 @@ build_init_code:
 ########################################
 # Test
 ########################################
-test_quick: build
+test-quick: build
 	forge test --fuzz-runs 256
 
-test_std: build
+test-std: build
 	forge test
 
-test_gas: build
+test-gas: build
 	forge test --gas-report
 
-test_cov: build
+test-cov: build
 	forge coverage --no-match-coverage "(script|test|Foo|Bar)"
 
-test_fuzz: build
+test-fuzz: build
 	forge test --fuzz-runs 10000
 
 ########################################
@@ -74,6 +74,25 @@ deploy_SendAndReceiveERC1155TL_mainnets: build
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC1155TL.sol:SendAndReceiveERC1155TL --chain arbitrum --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC1155TL.sol:SendAndReceiveERC1155TL --chain base --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC1155TL.sol:SendAndReceiveERC1155TL --verifier blockscout --verifier-url https://shapescan.xyz/api  --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	@bash print_and_clean.sh
+
+########################################
+# SendAndReceiveERC721TL Deployments
+########################################
+deploy_SendAndReceiveERC721TL_testnets: build
+	forge script --ledger --sender ${SENDER} --broadcast --sig "run(string,bool)" script/Deploy.s.sol:Deploy "SendAndReceiveERC721TL.sol:SendAndReceiveERC721TL" true
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC721TL.sol:SendAndReceiveERC721TL --chain sepolia --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC721TL.sol:SendAndReceiveERC721TL --chain arbitrum-sepolia --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC721TL.sol:SendAndReceiveERC721TL --chain base-sepolia --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC721TL.sol:SendAndReceiveERC721TL --verifier blockscout --verifier-url https://sepolia.shapescan.xyz/api  --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	@bash print_and_clean.sh
+
+deploy_SendAndReceiveERC721TL_mainnets: build
+	forge script --ledger --sender ${SENDER} --broadcast --sig "run(string,bool)" script/Deploy.s.sol:Deploy "SendAndReceiveERC721TL.sol:SendAndReceiveERC721TL" false
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC721TL.sol:SendAndReceiveERC721TL --chain mainnet --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC721TL.sol:SendAndReceiveERC721TL --chain arbitrum --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC721TL.sol:SendAndReceiveERC721TL --chain base --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC721TL.sol:SendAndReceiveERC721TL --verifier blockscout --verifier-url https://shapescan.xyz/api  --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	@bash print_and_clean.sh
 
 ########################################

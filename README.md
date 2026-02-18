@@ -5,6 +5,7 @@ Smart contracts where you send ERC-1155 tokens and in return receive something e
 The system is meant to be quite simple. It takes in ERC-1155 tokens, confirms the token + quantity of that token is available to be redeemed for something else.
 
 ![Redeem a ERC1155TL Mint](./public/SendAndReceiveERC1155TL.png)
+![Redeem a ERC721TL Mint](./public/SendAndReceiveERC721TL.png)
 ![Raffle for ERC1155TL Mint](./public/SendAndReceiveERC1155TLRaffle.png)
 ![Redeem an ERC721 token](./public/SendAndReceiveERC721.png)
 ![Redeem ETH or ERC-20](./public/SendAndReceiveCurrency.png)
@@ -20,6 +21,8 @@ Some notes...
 
 `SendAndReceiveERC1155TL`: The owner must ensure that the contract stays approved to mint new ERC155TL tokens and that they do not call the emergency close function.
 
+`SendAndReceiveERC721TL`: The owner must ensure that the contract stays approved to mint new ERC721TL tokens and that they do not call the emergency close function.
+
 `SendAndReceiveERC721`: The owner must ensure they keep ownership and approval of the ERC-721 token and that they do not call the emergency close function.
 
 `SendAndReceiveERC1155TLRaffle`: The users trust that the owner will not abandon the raffle if they don't like the results. If the owner does not reveal within 48 hours of entry end, the users can cancel the raffle at least and tokens are not locked.
@@ -28,23 +31,25 @@ Some notes...
 
 ## Test Coverage
 ```
-╭---------------------------------------+-------------------+-------------------+-----------------+-----------------╮
-| File                                  | % Lines           | % Statements      | % Branches      | % Funcs         |
-+===================================================================================================================+
-| src/SendAndReceiveCurrency.sol        | 100.00% (60/60)   | 100.00% (75/75)   | 100.00% (19/19) | 100.00% (9/9)   |
-|---------------------------------------+-------------------+-------------------+-----------------+-----------------|
-| src/SendAndReceiveERC1155TL.sol       | 100.00% (69/69)   | 100.00% (79/79)   | 100.00% (17/17) | 100.00% (10/10) |
-|---------------------------------------+-------------------+-------------------+-----------------+-----------------|
-| src/SendAndReceiveERC1155TLRaffle.sol | 100.00% (117/117) | 100.00% (141/141) | 100.00% (28/28) | 100.00% (13/13) |
-|---------------------------------------+-------------------+-------------------+-----------------+-----------------|
-| src/SendAndReceiveERC721.sol          | 100.00% (64/64)   | 100.00% (70/70)   | 100.00% (16/16) | 100.00% (10/10) |
-|---------------------------------------+-------------------+-------------------+-----------------+-----------------|
-| src/lib/AffinePermutation.sol         | 100.00% (19/19)   | 100.00% (29/29)   | 100.00% (4/4)   | 100.00% (4/4)   |
-|---------------------------------------+-------------------+-------------------+-----------------+-----------------|
-| src/lib/SendAndReceiveBase.sol        | 100.00% (31/31)   | 100.00% (35/35)   | 100.00% (8/8)   | 100.00% (6/6)   |
-|---------------------------------------+-------------------+-------------------+-----------------+-----------------|
-| Total                                 | 100.00% (360/360) | 100.00% (429/429) | 100.00% (92/92) | 100.00% (52/52) |
-╰---------------------------------------+-------------------+-------------------+-----------------+-----------------╯
+╭---------------------------------------+-------------------+-------------------+-------------------+-----------------╮
+| File                                  | % Lines           | % Statements      | % Branches        | % Funcs         |
++=====================================================================================================================+
+| src/SendAndReceiveCurrency.sol        | 100.00% (60/60)   | 100.00% (75/75)   | 100.00% (19/19)   | 100.00% (9/9)   |
+|---------------------------------------+-------------------+-------------------+-------------------+-----------------|
+| src/SendAndReceiveERC1155TL.sol       | 100.00% (69/69)   | 100.00% (79/79)   | 100.00% (17/17)   | 100.00% (10/10) |
+|---------------------------------------+-------------------+-------------------+-------------------+-----------------|
+| src/SendAndReceiveERC1155TLRaffle.sol | 100.00% (117/117) | 100.00% (141/141) | 100.00% (28/28)   | 100.00% (13/13) |
+|---------------------------------------+-------------------+-------------------+-------------------+-----------------|
+| src/SendAndReceiveERC721.sol          | 100.00% (64/64)   | 100.00% (70/70)   | 100.00% (16/16)   | 100.00% (10/10) |
+|---------------------------------------+-------------------+-------------------+-------------------+-----------------|
+| src/SendAndReceiveERC721TL.sol        | 100.00% (70/70)   | 100.00% (80/80)   | 100.00% (17/17)   | 100.00% (10/10) |
+|---------------------------------------+-------------------+-------------------+-------------------+-----------------|
+| src/lib/AffinePermutation.sol         | 100.00% (19/19)   | 100.00% (29/29)   | 100.00% (4/4)     | 100.00% (4/4)   |
+|---------------------------------------+-------------------+-------------------+-------------------+-----------------|
+| src/lib/SendAndReceiveBase.sol        | 100.00% (31/31)   | 100.00% (35/35)   | 100.00% (8/8)     | 100.00% (6/6)   |
+|---------------------------------------+-------------------+-------------------+-------------------+-----------------|
+| Total                                 | 100.00% (430/430) | 100.00% (509/509) | 100.00% (109/109) | 100.00% (62/62) |
+╰---------------------------------------+-------------------+-------------------+-------------------+-----------------╯
 ```
 
 ## Getting Started
@@ -75,6 +80,12 @@ cast calldata "initialize(address, (bool,address,uint256,address,uint64,uint64,u
 ```
 Don't forget to approve the deployed contract as a mint contract on the ERC1155TL contract.
 
+`SendAndReceiveERC721TL`:
+```
+cast calldata "initialize(address, (bool,address,address,uint64,uint64,uint64,uint64,uint64,string), (address,uint256,uint256)[])" <OWNER ADDRESS> "(false, <OUPUT CONTRACT ADDRESS>, <TOKEN SINK ADDRESS>, <OPEN AT>, <DURATION>, <MAX REDEMPTIONS>, 0, 0, <BASE URI>)" "[(<INPUT TOKEN ADDRESS>, <INPUT TOKEN ID>, <INPUT AMOUNT>)]" 
+```
+Don't forget to approve the deployed contract as a mint contract on the ERC721TL contract.
+
 `SendAndReceiveERC1155TLRaffle`:
 ```
 cast calldata "initialize(address, (bool,address,uint256,address,uint256,uint64,address,uint64,uint64,uint64,uint64), bytes32)" <OWNER ADDRESS> "(false, <OUPUT CONTRACT ADDRESS>, <OUTPUT TOKEN ID>, <INPUT CONTRACT ADDRESS>, <INPUT TOKEN ID>, <INPUT TOKEN AMOUNT>, <TOKEN SINK ADDRESS>, <OPEN AT>, <DURATION>, <NUM WINNERS>, 0)" <RANDOMNESS SEED HASH>
@@ -98,6 +109,6 @@ This codebase is provided on an "as is" and "as available" basis.
 We do not give any warranties and will not be liable for any loss incurred through any use of this codebase.
 
 ## License
-Copright (c) 2025 - Transient Labs, Inc.
+Copright (c) 2026 - Transient Labs, Inc.
 
-Licensed under the GNU Affero General Public License v3.0 only (AGPL-3.0-only). See the `LICENSE` file for more details.
+Licensed under the MIT License. See the `LICENSE` file for more details.
