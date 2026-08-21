@@ -42,19 +42,19 @@ build_init_code:
 ########################################
 # Test
 ########################################
-test_quick: build
+test-quick: build
 	forge test --fuzz-runs 256
 
-test_std: build
+test-std: build
 	forge test
 
-test_gas: build
+test-gas: build
 	forge test --gas-report
 
-test_cov: build
+test-cov: build
 	forge coverage --no-match-coverage "(script|test|Foo|Bar)"
 
-test_fuzz: build
+test-fuzz: build
 	forge test --fuzz-runs 10000
 
 ########################################
@@ -66,6 +66,7 @@ deploy_SendAndReceiveERC1155TL_testnets: build
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC1155TL.sol:SendAndReceiveERC1155TL --chain arbitrum-sepolia --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC1155TL.sol:SendAndReceiveERC1155TL --chain base-sepolia --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC1155TL.sol:SendAndReceiveERC1155TL --verifier blockscout --verifier-url https://sepolia.shapescan.xyz/api  --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC1155TL.sol:SendAndReceiveERC1155TL --verifier blockscout --verifier-url https://explorer.testnet.chain.robinhood.com/api --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	@bash print_and_clean.sh
 
 deploy_SendAndReceiveERC1155TL_mainnets: build
@@ -74,6 +75,28 @@ deploy_SendAndReceiveERC1155TL_mainnets: build
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC1155TL.sol:SendAndReceiveERC1155TL --chain arbitrum --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC1155TL.sol:SendAndReceiveERC1155TL --chain base --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC1155TL.sol:SendAndReceiveERC1155TL --verifier blockscout --verifier-url https://shapescan.xyz/api  --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC1155TL.sol:SendAndReceiveERC1155TL --verifier blockscout --verifier-url https://robinhoodchain.blockscout.com/api  --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	@bash print_and_clean.sh
+
+########################################
+# SendAndReceiveERC721TL Deployments
+########################################
+deploy_SendAndReceiveERC721TL_testnets: build
+	forge script --ledger --sender ${SENDER} --broadcast --sig "run(string,bool)" script/Deploy.s.sol:Deploy "SendAndReceiveERC721TL.sol:SendAndReceiveERC721TL" true
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC721TL.sol:SendAndReceiveERC721TL --chain sepolia --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC721TL.sol:SendAndReceiveERC721TL --chain arbitrum-sepolia --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC721TL.sol:SendAndReceiveERC721TL --chain base-sepolia --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC721TL.sol:SendAndReceiveERC721TL --verifier blockscout --verifier-url https://sepolia.shapescan.xyz/api  --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC721TL.sol:SendAndReceiveERC721TL --verifier blockscout --verifier-url https://explorer.testnet.chain.robinhood.com/api  --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	@bash print_and_clean.sh
+
+deploy_SendAndReceiveERC721TL_mainnets: build
+	forge script --ledger --sender ${SENDER} --broadcast --sig "run(string,bool)" script/Deploy.s.sol:Deploy "SendAndReceiveERC721TL.sol:SendAndReceiveERC721TL" false
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC721TL.sol:SendAndReceiveERC721TL --chain mainnet --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC721TL.sol:SendAndReceiveERC721TL --chain arbitrum --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC721TL.sol:SendAndReceiveERC721TL --chain base --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC721TL.sol:SendAndReceiveERC721TL --verifier blockscout --verifier-url https://shapescan.xyz/api  --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC721TL.sol:SendAndReceiveERC721TL --verifier blockscout --verifier-url https://robinhoodchain.blockscout.com/api  --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	@bash print_and_clean.sh
 
 ########################################
@@ -85,6 +108,7 @@ deploy_SendAndReceiveERC1155TLRaffle_testnets: build
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC1155TLRaffle.sol:SendAndReceiveERC1155TLRaffle --chain arbitrum-sepolia --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC1155TLRaffle.sol:SendAndReceiveERC1155TLRaffle --chain base-sepolia --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC1155TLRaffle.sol:SendAndReceiveERC1155TLRaffle --verifier blockscout --verifier-url https://sepolia.shapescan.xyz/api  --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC1155TLRaffle.sol:SendAndReceiveERC1155TLRaffle --verifier blockscout --verifier-url https://explorer.testnet.chain.robinhood.com/api  --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	@bash print_and_clean.sh
 
 deploy_SendAndReceiveERC1155TLRaffle_mainnets: build
@@ -93,6 +117,7 @@ deploy_SendAndReceiveERC1155TLRaffle_mainnets: build
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC1155TLRaffle.sol:SendAndReceiveERC1155TLRaffle --chain arbitrum --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC1155TLRaffle.sol:SendAndReceiveERC1155TLRaffle --chain base --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC1155TLRaffle.sol:SendAndReceiveERC1155TLRaffle --verifier blockscout --verifier-url https://shapescan.xyz/api  --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC1155TLRaffle.sol:SendAndReceiveERC1155TLRaffle --verifier blockscout --verifier-url https://robinhoodchain.blockscout.com/api  --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	@bash print_and_clean.sh
 
 ########################################
@@ -104,6 +129,7 @@ deploy_SendAndReceiveERC721_testnets: build
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC721.sol:SendAndReceiveERC721 --chain arbitrum-sepolia --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC721.sol:SendAndReceiveERC721 --chain base-sepolia --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC721.sol:SendAndReceiveERC721 --verifier blockscout --verifier-url https://sepolia.shapescan.xyz/api  --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC721.sol:SendAndReceiveERC721 --verifier blockscout --verifier-url https://explorer.testnet.chain.robinhood.com/api  --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	@bash print_and_clean.sh
 
 deploy_SendAndReceiveERC721_mainnets: build
@@ -112,6 +138,7 @@ deploy_SendAndReceiveERC721_mainnets: build
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC721.sol:SendAndReceiveERC721 --chain arbitrum --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC721.sol:SendAndReceiveERC721 --chain base --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC721.sol:SendAndReceiveERC721 --verifier blockscout --verifier-url https://shapescan.xyz/api  --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveERC721.sol:SendAndReceiveERC721 --verifier blockscout --verifier-url https://robinhoodchain.blockscout.com/api  --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	@bash print_and_clean.sh
 
 ########################################
@@ -123,6 +150,7 @@ deploy_SendAndReceiveCurrency_testnets: build
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveCurrency.sol:SendAndReceiveCurrency --chain arbitrum-sepolia --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveCurrency.sol:SendAndReceiveCurrency --chain base-sepolia --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveCurrency.sol:SendAndReceiveCurrency --verifier blockscout --verifier-url https://sepolia.shapescan.xyz/api  --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveCurrency.sol:SendAndReceiveCurrency --verifier blockscout --verifier-url https://explorer.testnet.chain.robinhood.com/api  --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	@bash print_and_clean.sh
 
 deploy_SendAndReceiveCurrency_mainnets: build
@@ -131,10 +159,11 @@ deploy_SendAndReceiveCurrency_mainnets: build
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveCurrency.sol:SendAndReceiveCurrency --chain arbitrum --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveCurrency.sol:SendAndReceiveCurrency --chain base --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveCurrency.sol:SendAndReceiveCurrency --verifier blockscout --verifier-url https://shapescan.xyz/api  --watch --constructor-args ${CONSTRUCTOR_ARGS}
+	forge verify-contract $$(cat ./.temp/out.txt) src/SendAndReceiveCurrency.sol:SendAndReceiveCurrency --verifier blockscout --verifier-url https://robinhoodchain.blockscout.com/api  --watch --constructor-args ${CONSTRUCTOR_ARGS}
 	@bash print_and_clean.sh
 
 ########################################
 # Add to TLUniversalDeployer (testnet only)
 ########################################
 add_to_universal_deployer:
-	cast send --rpc-url sepolia --ledger 0x7c24805454F7972d36BEE9D139BD93423AA29f3f "addDeployableContract(string,(string,address))" 
+	cast send --rpc-url $(CHAIN) --ledger 0x7c24805454F7972d36BEE9D139BD93423AA29f3f "addDeployableContract(string,(string,address))" 

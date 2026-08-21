@@ -40,5 +40,5 @@ jobs:
 
       - name: Run Forge tests
         run: |
-          make test_std
+          make test-std
         id: test
