@@ -1,13 +1,13 @@
-[profile.general]
-version = "2.1.0"
-
 [profile.default]
 src = "src"
 out = "out"
 libs = ["dependencies"]
-auto_detect_solc = true
+solc = "0.8.28"
+auto_detect_solc = false
 optimizer = true
 optimizer_runs = 10000
+bytecode_hash = "none"
+cbor_metadata = false
 verbosity = 3
 gas_reports = ["SendAndReceiveERC1155TL", "SendAndReceiveERC721TL", "SendAndReceiveERC1155TLRaffle", "SendAndReceiveERC721", "SendAndReceiveCurrency"]
 show_progress = true
@@ -27,15 +27,17 @@ sepolia = "${SEPOLIA_RPC_URL}"
 arbitrum_sepolia = "${ARB_SEPOLIA_RPC_URL}"
 base_sepolia = "${BASE_SEPOLIA_RPC_URL}"
 shape_sepolia = "${SHAPE_SEPOLIA_RPC_URL}"
+robinhood_testnet = "${ROBINHOOD_TESTNET_RPC_URL}"
 mainnet = "${ETH_RPC_URL}"
 arbitrum = "${ARB_RPC_URL}"
 base = "${BASE_RPC_URL}"
 shape = "${SHAPE_RPC_URL}"
+robinhood = "${ROBINHOOD_RPC_URL}"
 
 [etherscan]
 sepolia = { key = "${ETHERSCAN_KEY}" }
-arbitrum_sepolia = {  key = "${ETHERSCAN_KEY}", url = "https://api-sepolia.arbiscan.io/api" }
-base_sepolia = {  key = "${ETHERSCAN_KEY}", url = "https://api-sepolia.basescan.org/api" }
+arbitrum_sepolia = {  key = "${ETHERSCAN_KEY}" }
+base_sepolia = {  key = "${ETHERSCAN_KEY}" }
 mainnet = { key = "${ETHERSCAN_KEY}"}
-arbitrum = { key = "${ETHERSCAN_KEY}", url = "https://api.arbiscan.io/api" }
-base = { key = "${ETHERSCAN_KEY}", url = "https://api.basescan.org/api" }
+arbitrum = { key = "${ETHERSCAN_KEY}" }
+base = { key = "${ETHERSCAN_KEY}" }
