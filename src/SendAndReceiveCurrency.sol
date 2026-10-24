@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.28;
+pragma solidity 0.8.30;
 
-import {IERC20} from "@openzeppelin-contracts-5.0.2/token/ERC20/IERC20.sol";
-import {IERC1155} from "@openzeppelin-contracts-5.0.2/token/ERC1155/IERC1155.sol";
+import {IERC20} from "@openzeppelin-contracts-5.6.1/token/ERC20/IERC20.sol";
+import {IERC1155} from "@openzeppelin-contracts-5.6.1/token/ERC1155/IERC1155.sol";
 import {SendAndReceiveBase, IERC1155Receiver} from "./lib/SendAndReceiveBase.sol";
 
 /// @title Send and Receive Currency
 /// @notice A contract that receives 1155 tokens and sends back ETH or ERC-20 tokens
 /// @author Transient Labs, Inc.
-/// @custom:version 2.0.0
+/// @custom:version 2.2.0
 /// @dev The contract is written to only be configured for a single input token that immediately gets sent to the 0xDEAD address.
 ///      It is also written so that once configured, currency is always retrievable by sending tokens and nothing else.
 ///      There is a minimum duration that it will be open for, configured by the creator, allowing them to close it manually only after that time has passed.
@@ -82,7 +82,6 @@ contract SendAndReceiveCurrency is SendAndReceiveBase {
     function initialize(address initOwner, Settings calldata initSettings) external initializer {
         // initialize dependencies
         __Ownable_init(initOwner);
-        __ReentrancyGuard_init();
 
         // make sure input contract has code
         if (initSettings.inputContractAddress.code.length == 0) revert AddressZeroCodeLength();

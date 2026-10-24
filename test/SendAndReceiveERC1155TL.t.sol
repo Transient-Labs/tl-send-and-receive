@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.28;
+pragma solidity 0.8.30;
 
 import "forge-std-1.9.7/Test.sol";
 import {SendAndReceiveERC1155TL} from "src/SendAndReceiveERC1155TL.sol";
 import {SendAndReceiveBase} from "src/lib/SendAndReceiveBase.sol";
 import {
     OwnableUpgradeable, Initializable
-} from "@openzeppelin-contracts-upgradeable-5.0.2/access/OwnableUpgradeable.sol";
-import {ERC1155TL} from "tl-creator-contracts-3.7.1/erc-1155/ERC1155TL.sol";
+} from "@openzeppelin-contracts-upgradeable-5.6.1/access/OwnableUpgradeable.sol";
+import {ERC1155TL} from "tl-creator-contracts-4.1.1/erc-1155/ERC1155TL.sol";
 
 contract SendAndReceiveERC1155TLTest is Test {
     SendAndReceiveERC1155TL public snr;
@@ -23,7 +23,7 @@ contract SendAndReceiveERC1155TLTest is Test {
     function setUp() public {
         // setup ERC1155TL
         nft = new ERC1155TL(false);
-        nft.initialize("Token", "TKN", "", address(this), 1000, address(this), new address[](0), true, address(0));
+        nft.initialize("Token", "TKN", address(this), 1000, address(this), new address[](0), true, address(0), 0);
         address[] memory addys = new address[](3);
         addys[0] = bsy;
         addys[1] = bob;
@@ -422,6 +422,15 @@ contract SendAndReceiveERC1155TLTest is Test {
         vm.prank(bsy);
         vm.expectRevert(SendAndReceiveERC1155TL.NotOpen.selector);
         nft.safeBatchTransferFrom(bsy, address(snr), ids, values, "");  
+    }
+
+    function test_batchTransfer_emptyArrays() public {
+        (,,,, uint64 openAt,,,) = snr.settings();
+        vm.warp(openAt);
+
+        vm.prank(bsy);
+        vm.expectRevert(SendAndReceiveBase.EmptyArray.selector);
+        nft.safeBatchTransferFrom(bsy, address(snr), new uint256[](0), new uint256[](0), "");
     }
 
     function test_batchTransfer(address sender, uint256 amt1) public {

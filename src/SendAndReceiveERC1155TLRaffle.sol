@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.28;
+pragma solidity 0.8.30;
 
-import {IERC1155} from "@openzeppelin-contracts-5.0.2/token/ERC1155/IERC1155.sol";
-import {IERC1155TL} from "tl-creator-contracts-3.7.1/erc-1155/IERC1155TL.sol";
+import {IERC1155} from "@openzeppelin-contracts-5.6.1/token/ERC1155/IERC1155.sol";
+import {IERC1155TL} from "tl-creator-contracts-4.1.1/erc-1155/IERC1155TL.sol";
 import {SendAndReceiveBase, IERC1155Receiver} from "./lib/SendAndReceiveBase.sol";
 import {AffinePermutation} from "./lib/AffinePermutation.sol";
 
 /// @title Send and Receive ERC1155TL Raffle
 /// @notice A contract that receives 1155 tokens and enters senders into a raffle
 /// @author Transient Labs, Inc.
-/// @custom:version 2.0.0
+/// @custom:version 2.2.0
 /// @dev The contract is written to only be configured for a single output token and single input token.
 ///      Each address entering the onchain raffle can only enter once.
 ///      It uses a commit-reveal scheme + an Affine Permutation for a full onchain raffle that is unstoppable.
@@ -104,7 +104,6 @@ contract SendAndReceiveERC1155TLRaffle is SendAndReceiveBase {
     function initialize(address initOwner, Settings calldata initSettings, bytes32 seedHash) external initializer {
         // initialize dependencies
         __Ownable_init(initOwner);
-        __ReentrancyGuard_init();
 
         // verify that the input contract address has code
         if (initSettings.inputContractAddress.code.length == 0) revert AddressZeroCodeLength();

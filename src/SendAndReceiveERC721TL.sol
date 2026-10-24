@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.28;
+pragma solidity 0.8.30;
 
-import {IERC1155} from "@openzeppelin-contracts-5.0.2/token/ERC1155/IERC1155.sol";
-import {Strings} from "@openzeppelin-contracts-5.0.2/utils/Strings.sol";
-import {IERC721TL} from "tl-creator-contracts-3.7.1/erc-721/IERC721TL.sol";
+import {IERC1155} from "@openzeppelin-contracts-5.6.1/token/ERC1155/IERC1155.sol";
+import {Strings} from "@openzeppelin-contracts-5.6.1/utils/Strings.sol";
+import {IERC721TL} from "tl-creator-contracts-4.1.1/erc-721/IERC721TL.sol";
 import {SendAndReceiveBase, IERC1155Receiver} from "./lib/SendAndReceiveBase.sol";
 
 /// @title Send and Receive ERC721TL
 /// @notice A contract that receives 1155 tokens and mints back an ERC721TL token
 /// @author Transient Labs, Inc.
-/// @custom:version 2.1.0
+/// @custom:version 2.2.0
 /// @dev The contract is written to only be configured for a single output token, however multiple input token configurations are possible.
 ///      For each token sent out, you can configure which token and what amount of that token is required.
 ///      Example: token A can be redeemed by sending 2 of token B *or* 5 of token C.
@@ -92,7 +92,6 @@ contract SendAndReceiveERC721TL is SendAndReceiveBase {
     {
         // initialize dependencies
         __Ownable_init(initOwner);
-        __ReentrancyGuard_init();
 
         // verify input token sink is not the zero address
         if (initSettings.inputTokenSink == address(0)) revert ZeroAddressSink();

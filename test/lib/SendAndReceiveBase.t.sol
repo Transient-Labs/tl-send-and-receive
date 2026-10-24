@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.28;
+pragma solidity 0.8.30;
 
 import "forge-std-1.9.7/Test.sol";
 import {MockSendAndReceive, SendAndReceiveBase} from "../mocks/MockSendAndReceive.sol";
 import {MockERC20} from "../mocks/MockERC20.sol";
 import {MockERC721} from "../mocks/MockERC721.sol";
-import {ERC1155TL} from "tl-creator-contracts-3.7.1/erc-1155/ERC1155TL.sol";
-import {OwnableUpgradeable} from "@openzeppelin-contracts-upgradeable-5.0.2/access/OwnableUpgradeable.sol";
+import {ERC1155TL} from "tl-creator-contracts-4.1.1/erc-1155/ERC1155TL.sol";
+import {OwnableUpgradeable} from "@openzeppelin-contracts-upgradeable-5.6.1/access/OwnableUpgradeable.sol";
 
 contract SendAndReceiveBaseTest is Test {
     MockSendAndReceive public snr;
@@ -19,7 +19,7 @@ contract SendAndReceiveBaseTest is Test {
     function setUp() public {
         // setup ERC1155TL
         nft = new ERC1155TL(false);
-        nft.initialize("Token", "TKN", "", address(this), 1000, address(this), new address[](0), true, address(0));
+        nft.initialize("Token", "TKN", address(this), 1000, address(this), new address[](0), true, address(0), 0);
         address[] memory addys = new address[](1);
         addys[0] = bsy;
         uint256[] memory amts = new uint256[](1);
@@ -104,6 +104,13 @@ contract SendAndReceiveBaseTest is Test {
         ids[2] = 3;
         vm.expectRevert(SendAndReceiveBase.ArrayLengthMismatch.selector);
         snr.onERC1155BatchReceived(address(0), sender, ids, amts, "");
+
+        // try sending empty arrays
+        vm.expectRevert(SendAndReceiveBase.EmptyArray.selector);
+        snr.onERC1155BatchReceived(address(0), sender, new uint256[](0), new uint256[](0), "");
+        vm.prank(sender);
+        vm.expectRevert(SendAndReceiveBase.EmptyArray.selector);
+        nft.safeBatchTransferFrom(sender, address(snr), new uint256[](0), new uint256[](0), "");
 
         // try sending zero amount
         uint256[] memory values = new uint256[](3);

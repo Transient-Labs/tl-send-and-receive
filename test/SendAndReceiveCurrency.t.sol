@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.28;
+pragma solidity 0.8.30;
 
 import "forge-std-1.9.7/Test.sol";
 import {SendAndReceiveCurrency} from "src/SendAndReceiveCurrency.sol";
 import {SendAndReceiveBase} from "src/lib/SendAndReceiveBase.sol";
 import {
     OwnableUpgradeable, Initializable
-} from "@openzeppelin-contracts-upgradeable-5.0.2/access/OwnableUpgradeable.sol";
-import {ERC1155TL} from "tl-creator-contracts-3.7.1/erc-1155/ERC1155TL.sol";
+} from "@openzeppelin-contracts-upgradeable-5.6.1/access/OwnableUpgradeable.sol";
+import {ERC1155TL} from "tl-creator-contracts-4.1.1/erc-1155/ERC1155TL.sol";
 import {MockERC20} from "./mocks/MockERC20.sol";
 
 contract ForceSend {
@@ -120,7 +120,7 @@ contract SendAndReceiveCurrencyTest is Test {
     function setUp() public {
         // setup ERC1155TL
         nft = new ERC1155TL(false);
-        nft.initialize("Token", "TKN", "", address(this), 1000, address(this), new address[](0), true, address(0));
+        nft.initialize("Token", "TKN", address(this), 1000, address(this), new address[](0), true, address(0), 0);
         address[] memory addys = new address[](3);
         addys[0] = bsy;
         addys[1] = bob;
@@ -680,6 +680,20 @@ contract SendAndReceiveCurrencyTest is Test {
         vm.prank(bsy);
         vm.expectRevert(SendAndReceiveCurrency.Finalized.selector);
         nft.safeBatchTransferFrom(bsy, address(snrCoin), ids, values, "");
+    }
+
+    function test_batchTransfer_emptyArrays() public {
+        // deposit ETH and open
+        vm.deal(address(this), 1 ether);
+        snrEth.depositEth{value: 1 ether}();
+        snrEth.open();
+
+        vm.prank(bsy);
+        vm.expectRevert(SendAndReceiveBase.EmptyArray.selector);
+        nft.safeBatchTransferFrom(bsy, address(snrEth), new uint256[](0), new uint256[](0), "");
+
+        // make sure no ETH was paid out
+        assertEq(address(snrEth).balance, 1 ether);
     }
 
     function test_batchTransfer_eth(uint256 amt) public {

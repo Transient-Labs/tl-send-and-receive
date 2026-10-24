@@ -1,27 +1,26 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.28;
+pragma solidity 0.8.30;
 
-import {IERC20} from "@openzeppelin-contracts-5.0.2/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin-contracts-5.0.2/token/ERC20/utils/SafeERC20.sol";
-import {IERC721} from "@openzeppelin-contracts-5.0.2/token/ERC721/IERC721.sol";
-import {Address} from "@openzeppelin-contracts-5.0.2/utils/Address.sol";
+import {IERC20} from "@openzeppelin-contracts-5.6.1/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin-contracts-5.6.1/token/ERC20/utils/SafeERC20.sol";
+import {IERC721} from "@openzeppelin-contracts-5.6.1/token/ERC721/IERC721.sol";
+import {Address} from "@openzeppelin-contracts-5.6.1/utils/Address.sol";
 import {
     ERC165Upgradeable,
     IERC165
-} from "@openzeppelin-contracts-upgradeable-5.0.2/utils/introspection/ERC165Upgradeable.sol";
-import {OwnableUpgradeable} from "@openzeppelin-contracts-upgradeable-5.0.2/access/OwnableUpgradeable.sol";
-import {ReentrancyGuardUpgradeable} from
-    "@openzeppelin-contracts-upgradeable-5.0.2/utils/ReentrancyGuardUpgradeable.sol";
-import {IERC1155Receiver} from "@openzeppelin-contracts-5.0.2/token/ERC1155/IERC1155Receiver.sol";
+} from "@openzeppelin-contracts-upgradeable-5.6.1/utils/introspection/ERC165Upgradeable.sol";
+import {OwnableUpgradeable} from "@openzeppelin-contracts-upgradeable-5.6.1/access/OwnableUpgradeable.sol";
+import {ReentrancyGuardTransient} from "@openzeppelin-contracts-5.6.1/utils/ReentrancyGuardTransient.sol";
+import {IERC1155Receiver} from "@openzeppelin-contracts-5.6.1/token/ERC1155/IERC1155Receiver.sol";
 
 /// @title Send and Receive Base
 /// @notice A base abstract contract that receives 1155 tokens and does something with them
 /// @author Transient Labs, Inc.
-/// @custom:version 2.0.0
+/// @custom:version 2.2.0
 
 abstract contract SendAndReceiveBase is
     OwnableUpgradeable,
-    ReentrancyGuardUpgradeable,
+    ReentrancyGuardTransient,
     ERC165Upgradeable,
     IERC1155Receiver
 {
@@ -46,6 +45,7 @@ abstract contract SendAndReceiveBase is
 
     error FromZeroAddress();
     error ArrayLengthMismatch();
+    error EmptyArray();
     error ZeroAmountSent();
     error CannotSendToZeroAddress();
 
@@ -97,6 +97,9 @@ abstract contract SendAndReceiveBase is
 
         // verify array lengths match
         if (ids.length != values.length) revert ArrayLengthMismatch();
+
+        // protect against empty arrays
+        if (ids.length == 0) revert EmptyArray();
 
         // process input tokens
         for (uint256 i = 0; i < ids.length; ++i) {

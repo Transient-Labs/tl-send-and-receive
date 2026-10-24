@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.28;
+pragma solidity 0.8.30;
 
 import {SendAndReceiveBase} from "src/lib/SendAndReceiveBase.sol";
 
@@ -20,7 +20,6 @@ contract MockSendAndReceive is SendAndReceiveBase {
     function initialize(address initOwner) external initializer {
         // initialize dependencies
         __Ownable_init(initOwner);
-        __ReentrancyGuard_init();
     }
 
     function _processInputToken(

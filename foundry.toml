@@ -2,7 +2,8 @@
 src = "src"
 out = "out"
 libs = ["dependencies"]
-solc = "0.8.28"
+solc = "0.8.30"
+evm_version = "prague"
 auto_detect_solc = false
 optimizer = true
 optimizer_runs = 10000
@@ -18,9 +19,9 @@ runs = 1024
 
 [dependencies]
 forge-std = "1.9.7"
-tl-creator-contracts = "3.7.1"
-"@openzeppelin-contracts" = "5.0.2"
-"@openzeppelin-contracts-upgradeable" = "5.0.2"
+tl-creator-contracts = "4.1.1"
+"@openzeppelin-contracts" = "5.6.1"
+"@openzeppelin-contracts-upgradeable" = "5.6.1"
 
 [rpc_endpoints]
 sepolia = "${SEPOLIA_RPC_URL}"
